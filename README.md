@@ -13,7 +13,7 @@ ariblib
 
 import sys
 
-from ariblib import caption
+from ariblib import TransportStreamFile, caption
 
 with TransportStreamFile(sys.argv[1]) as ts:
     for table in caption.tables(ts):
@@ -29,7 +29,7 @@ with TransportStreamFile(sys.argv[1]) as ts:
 
 import sys
 from collections import defaultdict
-from ariblib import eit
+from ariblib import TransportStreamFile, eit
 
 with TransportStreamFile(sys.argv[1]) as ts:
     for table in eit.tables(ts):
