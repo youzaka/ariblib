@@ -1,6 +1,5 @@
 #!/usr/bin/env python3.2
 # -*- coding: utf-8 -*-
-import array
 import sys
 import io
 
@@ -166,7 +165,7 @@ class CodeSetController:
         self.esc_drcs = drcs
         self.esc_seq_count += 1
 
-class AribArray(array.array):
+class AribArray(bytearray):
     esc_seq = None
     def pop0(self):
         try:
@@ -185,8 +184,8 @@ class AribArray(array.array):
 class AribString:
     def __init__(self, array):
         self.control = CodeSetController()
-        self.arib_array = AribArray('B', bytes(array))
-        self.jis_array = AribArray('B')
+        self.arib_array = AribArray(array)
+        self.jis_array = AribArray()
         self.utf_buffer = io.StringIO()
         self.utf_buffer_symbol = io.StringIO()
         self.split_symbol = False
@@ -208,13 +207,12 @@ class AribString:
         return self.utf_buffer.getvalue()
     def flush_jis_array(self):
         if len(self.jis_array) > 0:
-            uni = 'UnicodeDecodeError'
             try:
-                uni = str(self.jis_array.tostring(), 'iso-2022-jp')
+                uni = self.jis_array.decode('iso-2022-jp')
             except UnicodeDecodeError:
-                pass
+                uni = 'UnicodeDecodeError'
             self.utf_buffer.write(uni)
-            self.jis_array = AribArray('B')
+            self.jis_array = AribArray()
     def convert(self, with_gaiji=True):
         while True:
             try:
