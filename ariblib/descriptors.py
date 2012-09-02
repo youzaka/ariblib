@@ -57,6 +57,7 @@ class Descriptor(Syntax):
             0xCF: LogoTransmissionDescriptor,
             0xD6: EventGroupDescriptor,
             0xDE: ContentAvailabilityDescriptor,
+            0xF6: AccessControlDescriptor,
             0xFA: TerrestrialDeliverySystemDescriptor,
             0XFB: PartialReceptionDescriptor,
             0xFD: DataComponentDescriptor,
@@ -483,6 +484,17 @@ class ContentAvailabilityDescriptor(Descriptor):
     retention_state = bslbf(3)
     encryption_mode = bslbf(1)
     reserved_future_use_2 = bslbf(lambda self: self.descriptor_length - 1)
+
+class AccessControlDescriptor(Descriptor):
+
+    """アクセス制御記述子 (ARIB-TR-B14 第四篇改定案 30.2.2.2"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    CA_system_ID = uimsbf(16)
+    transmission_type = bslbf(3)
+    PID = uimsbf(13)
+    private_data_byte = bslbf(lambda self: self.descriptor_length - 3)
 
 class TerrestrialDeliverySystemDescriptor(Descriptor):
 
