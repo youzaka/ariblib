@@ -73,7 +73,6 @@ class TransportStreamFile(BufferedReader):
         from ariblib.descriptors import StreamIdentifierDescriptor
 
         pat = next(self.tables(ProgramAssociationTable))
-        print(list(pat.pmt_pids))
         ProgramMapTable._pids = list(pat.pmt_pids)
         for pmt in self.tables(ProgramMapTable):
             for section in pmt.maps:
