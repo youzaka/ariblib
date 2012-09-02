@@ -4,7 +4,8 @@
 
 from collections import defaultdict
 
-from ariblib.mnemonics import aribstr, bslbf, case, char, loop, mnemonic, times, uimsbf
+from ariblib.mnemonics import (aribstr, bslbf, case, char, loop, mnemonic,
+                               raw, times, uimsbf)
 from ariblib.syntax import Syntax
 
 class descriptors(mnemonic):
@@ -158,7 +159,7 @@ class ExtendedEventDescriptor(Descriptor):
     ISO_639_language_code = char(24)
     length_of_items = uimsbf(8)
 
-    @loop(lambda self: self.length_of_items - 1)
+    @loop(lambda self: self.length_of_items)
     class items(Syntax):
         item_description_length = uimsbf(8)
         item_description_char = aribstr(item_description_length)
