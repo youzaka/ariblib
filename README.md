@@ -93,6 +93,7 @@ with TransportStreamFile(sys.argv[1]) as ts:
 
     # アダプテーションフィールドの PCR の値と、そこから一番近い TOT テーブルの値から、
     # 字幕の表示された時刻を計算します (若干誤差が出ます)
+    # PCR が一周した場合の処理は実装されていません
     base_pcr = next(ts.pcrs())
     base_time = next(ts.tables(TimeOffsetTable)).JST_time
 
