@@ -123,10 +123,10 @@ with TransportStreamFile(sys.argv[1]) as ts:
     EventInformationTable._table_ids = [0x4E]
     current = next(table for table in ts.tables(EventInformationTable)
                    if table.section_number == 0)
-    next = next(table for table in ts.tables(EventInformationTable)
-                if table.section_number == 1)
+    following = next(table for table in ts.tables(EventInformationTable)
+                     if table.section_number == 1)
     print('今の番組', show_program(current))
-    print('次の番組', show_program(next))
+    print('次の番組', show_program(following))
 ```
 
 使い方例3: 放送局名の一欄を表示
