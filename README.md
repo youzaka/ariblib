@@ -230,3 +230,24 @@ with TransportStreamFile(sys.argv[1]) as ts:
 ```
 拡張形式イベント記述子の処理のところがいけてないので、なんとかするつもりです。
 
+使い方例6: 深夜アニメの出力
+```python
+
+import sys
+
+from ariblib import TransportStreamFile
+from ariblib.descriptors import ContentDescriptor, ShortEventDescriptor
+from ariblib.tables import EventInformationTable
+
+with TransportStreamFile(sys.argv[1]) as ts:
+    EventInformationTable._table_ids = range(0x50, 0x70)
+    for eit in ts.tables(EventInformationTable):
+        for event in eit.events:
+            for genre in event.descriptors.get(ContentDescriptor, []):
+                nibble = next(genre.nibbles)
+                if nibble.content_nibble_level_1 == 0x07 and not (4 < event.start_time.hour < 22):
+                    for sdt in event.descriptors.get(ShortEventDescriptor, []):
+                        print(eit.service_id, event.event_id, event.start_time,
+                              event.duration, sdt.event_name_char, sdt.text_char)
+```
+
