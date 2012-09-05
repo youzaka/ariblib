@@ -144,7 +144,7 @@ with TransportStreamFile(sys.argv[1]) as ts:
     for sdt in ts.tables(ServiceDescriptionTable):
         for service in sdt.services:
             for sd in service.descriptors[ServiceDescriptor]:
-                print(service.service_id, SERVICE_TYPES[sd.service_type],
+                print(service.service_id, SERVICE_TYPE[sd.service_type],
                       sd.service_provider_name, sd.service_name)
 ```
 
@@ -164,7 +164,7 @@ with TransportStreamFile(sys.argv[1]) as ts:
     for pmt in ts.tables(ProgramMapTable):
         for tsmap in pmt.maps:
             for vd in tsmap.descriptors.get(VideoDecodeControlDescriptor, []):
-                print(tsmap.elementary_PID, VIDEO_ENCODE_FORMATS[vd.video_encode_format])
+                print(tsmap.elementary_PID, VIDEO_ENCODE_FORMAT[vd.video_encode_format])
 ```
 
 使い方例5: EPG情報の表示
@@ -246,8 +246,8 @@ with TransportStreamFile(sys.argv[1]) as ts:
             for genre in event.descriptors.get(ContentDescriptor, []):
                 nibble = next(genre.nibbles)
                 if nibble.content_nibble_level_1 == 0x07 and not (4 < event.start_time.hour < 22):
-                    for sdt in event.descriptors.get(ShortEventDescriptor, []):
+                    for sed in event.descriptors.get(ShortEventDescriptor, []):
                         print(eit.service_id, event.event_id, event.start_time,
-                              event.duration, sdt.event_name_char, sdt.text_char)
+                              event.duration, sed.event_name_char, sed.text_char)
 ```
 

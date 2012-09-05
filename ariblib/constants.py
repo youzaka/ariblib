@@ -260,7 +260,7 @@ SAMPLING_RATE = {
 }
 
 # ARIB-STD-B10-2-6.2.13 表6-25 サービス形式種別
-SERVICE_TYPES = {
+SERVICE_TYPE = {
     0x00: '未定義',
     0x01: 'デジタルTVサービス',
     0x02: 'デジタル音声サービス',
@@ -282,7 +282,7 @@ SERVICE_TYPES = {
 }
 
 # ARIB-STD-B1aS0-2-6.2.8 表6-14 リンク種別のコード
-LINKAGE_TYPES = {
+LINKAGE_TYPE = {
     0x01: '情報サービス',
     0x02: '電子番組ガイド(EPG)サービス',
     0x03: 'CA代替サービス',
@@ -341,7 +341,7 @@ STREAM_TYPE = {
 }
 
 # ARIB-STD-B10-2-D 表D-2 地域符号
-AREA_CODES = {
+AREA_CODE = {
     0b101001011010: '静岡県',
     0b100101100110: '愛知県',
     0b001011011100: '三重県',
@@ -398,7 +398,7 @@ AREA_CODES = {
 }
 
 # ARIB-STD-B10-2-6.2.30 表6-60 ビデオエンコードフォーマット
-VIDEO_ENCODE_FORMATS = {
+VIDEO_ENCODE_FORMAT = {
     0b0000: '1080p',
     0b0001: '1080i',
     0b0010: '720p',
