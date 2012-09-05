@@ -1,5 +1,7 @@
 #!/usr/bin/env python3.2
 
+"""各種 PSI テーブルの定義"""
+
 from collections import defaultdict
 from datetime import datetime, timedelta
 
@@ -12,7 +14,7 @@ class Table(Syntax):
 
     """テーブルの親クラス
 
-    PSI はこれの小クラスとする。字幕 PES も便宜的にそうする
+    PSI はこれの子クラスとする。字幕 PES も便宜的にそうする
     """
 
     _table_ids = range(256)
@@ -56,14 +58,14 @@ class ProgramAssociationTable(Table):
 
     @property
     def pmt_items(self):
-        """program_numberとprogram_map_PIDのタプルを返すジェネレータ"""
+        """program_number と program_map_PID のタプルを返すジェネレータ"""
         for pid in self.pids:
             if pid.program_number:
                 yield (pid.program_number, pid.program_map_PID)
 
     @property
     def pmt_pids(self):
-        """program_map_PIDを返すジェネレータ"""
+        """program_map_PID を返すジェネレータ"""
         for pid in self.pids:
             if pid.program_number:
                 yield pid.program_map_PID
@@ -502,7 +504,10 @@ class BroadcasterInformationTable(Table):
 
 class NetworkBoardInformationTable(Table):
 
-    """ネットワーク掲示板情報テーブル NBIT (ARIB-STD-B10-2-5.14)"""
+    """ネットワーク掲示板情報テーブル NBIT (ARIB-STD-B10-2-5.14)
+
+    FIXME: 未実装
+    """
 
     _pids = [0x25]
     _table_ids = [0x40, 0x41]

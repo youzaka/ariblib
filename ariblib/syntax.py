@@ -10,7 +10,7 @@ class SyntaxDict(dict):
 
     責務:
     1: 宣言された順番に記述子を格納するリストを提供する
-    2: ビット列表記クラスに開始位置付与クラスと変数名を与える
+    2: ビット列表記クラスに開始位置と変数名を与える
     3: ifセクション解決用のリストを提供する
     """
 
@@ -43,10 +43,10 @@ class SyntaxType(type):
         return SyntaxDict()
 
     def __new__(cls, name, args, classdict):
-        object = type.__new__(cls, name, args, classdict)
-        object._mnemonics = classdict.mnemonics
-        object._conditions = classdict.conditions
-        return object
+        instance = type.__new__(cls, name, args, classdict)
+        instance._mnemonics = classdict.mnemonics
+        instance._conditions = classdict.conditions
+        return instance
 
 class Syntax(metaclass=SyntaxType):
 

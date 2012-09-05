@@ -11,8 +11,8 @@ from ariblib.aribstr import AribString
 try:
     callable
 except NameError:
+    from types import FunctionType
     def callable(function):
-        from types import FunctionType
         return function.__class__ is FunctionType
 
 class mnemonic(object):
@@ -77,7 +77,7 @@ class rpchof(uimsbf):
 
     """remainder polynominal coefficients, highest order first[多項式係数の剰余、最上位階数が先頭]
 
-    正しい CRC のあたいかどうか検証する必要があるが、とりあえず uimsbf と同じ処理とする。"""
+    正しい CRC の値かどうか検証する必要があるが、とりあえず uimsbf と同じ処理とする。"""
 
 class mjd(mnemonic):
 
@@ -218,7 +218,7 @@ class case_table(fixed_count_loop):
         if self.condition(instance):
             start = self.start(instance) // 8
             obj = self.cls(instance._packet[start:])
-            return  obj
+            return obj
         return None
 
     def real_length(self, instance):
@@ -251,7 +251,7 @@ def mjd2datetime(pmjd):
 def bcd2time(bcd):
     """bcdを時分秒のタプルとして返す"""
 
-    hour = (((bcd[0] & 0xF0) >> 4) * 10 + (bcd[0] & 0x0F)) % 24
+    hour = (((bcd[0] & 0xF0) >> 4) * 10 + (bcd[0] & 0x0F))
     minute = ((bcd[1] & 0xF0) >> 4) * 10 + (bcd[1] & 0x0F)
     second = ((bcd[2] & 0xF0) >> 4) * 10 + (bcd[2] & 0x0F)
     return (hour, minute, second)
