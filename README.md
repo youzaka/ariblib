@@ -213,8 +213,8 @@ with TransportStreamFile(sys.argv[1]) as ts:
             for ctd in desc.get(ContentDescriptor, []):
                 nibble = next(ctd.nibbles)
                 print('genre1:', CONTENT_TYPE[nibble.content_nibble_level_1][0])
-                print('genre2:', CONTENT_TYPE[nibble.content_nibble_level_1][1
-                                             ][nibble.content_nibble_level_2])
+                print('genre2:', CONTENT_TYPE[nibble.content_nibble_level_1][1]
+                                             [nibble.content_nibble_level_2])
             detail = [('', [])]
             for eed in desc.get(ExtendedEventDescriptor, []):
                 for item in eed.items:
