@@ -31,8 +31,8 @@ class CProfileString(object):
         while self.data:
             char1 = self.data.pop(0)
             if 0xa0 < char1 < 0xff:
-                char2 = self.data.pop(0)
                 try:
+                    char2 = self.data.pop(0)
                     yield bytes((char1, char2)).decode('euc-jp')
                 except UnicodeDecodeError:
                     gaiji = ((char1 & 0x7f) << 8) | (char2 & 0x7f)
@@ -42,14 +42,22 @@ class CProfileString(object):
                     try:
                         yield GAIJI_MAP[gaiji]
                     except KeyError:
-                        yield '(0x{:x}{:x})'.format(char1, char2)
+                        yield '(0x{:x}{:x}, {}区{}点)'.format(
+                            char1, char2, char1 & 0x5f, char2 & 0x5f)
+                except IndexError:
+                    try:
+                        yield GAIJI_MAP[char1]
+                    except KeyError:
+                        yield '(0x{:x})'.format(char1)
             #elif options.drcs and 0x20 < char1 < 0x2f:
             #    yield str(self.drcs.get(char1, '(0x{:x})'.format(char1)))
             elif char1 in self.mapping:
                 yield self.mapping[char1]
 
     def __str__(self):
-        return ''.join(self).strip()
+        str = ''.join(self).strip()
+        self.__str__ = lambda self: str
+        return str
 
 class ColoredCProfileString(CProfileString):
 
@@ -72,4 +80,7 @@ class ColoredCProfileString(CProfileString):
     }
 
     def __str__(self):
-        return ''.join(self).strip() + '\033[37m'
+        str = ''.join(self).strip() + '\033[37m'
+        self.__str__ = lambda self: str
+        return str
+
