@@ -92,7 +92,7 @@ class CopyrightDescriptor(Descriptor):
 
 class ServiceListDescriptor(Descriptor):
 
-    """ サービスリスト記述子(ARIB-STD-B10-2-6.14)"""
+    """サービスリスト記述子(ARIB-STD-B10-2-6.14)"""
 
     _tag = 0x41
 
