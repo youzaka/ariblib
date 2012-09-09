@@ -22,7 +22,7 @@ class TransportStreamFile(BufferedReader):
 
     PACKET_SIZE = 188
 
-    def __init__(self, path, chunk_size=9964):
+    def __init__(self, path, chunk_size=10000):
         BufferedReader.__init__(self, FileIO(path))
         self.chunk_size = chunk_size
 
