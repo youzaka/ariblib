@@ -22,7 +22,7 @@ class TransportStreamFile(BufferedReader):
 
     PACKET_SIZE = 188
 
-    def __init__(self, path, chunk_size=10000):
+    def __init__(self, path, chunk_size=9964):
         BufferedReader.__init__(self, FileIO(path))
         self.chunk_size = chunk_size
 
@@ -32,8 +32,8 @@ class TransportStreamFile(BufferedReader):
         buffer_size = packet_size * chunk_size
         packets = iter(lambda: self.read(buffer_size), b'')
         return (packet[start:stop] for packet in packets
-            for start, stop in zip(range(0, buffer_size - packet_size, packet_size),
-                                   range(packet_size, buffer_size, packet_size)))
+            for start, stop in zip(range(0, buffer_size - packet_size + 1, packet_size),
+                                   range(packet_size, buffer_size + 1, packet_size)))
     def __next__(self):
         return self.read(self.PACKET_SIZE)
 
@@ -75,14 +75,26 @@ class TransportStreamFile(BufferedReader):
         pat = next(self.tables(ProgramAssociationTable))
         ProgramMapTable._pids = list(pat.pmt_pids)
         for pmt in self.tables(ProgramMapTable):
-            for section in pmt.maps:
-                try:
-                    if (section.stream_type == 0x06 and
-                        section.descriptors[StreamIdentifierDescriptor][0
-                            ].component_tag == 0x87):
-                        return section.elementary_PID
-                except KeyError:
-                    pass
+            for tsmap in pmt.maps:
+                if tsmap.stream_type != 0x06:
+                    continue
+                for si in tsmap.descriptors.get(StreamIdentifierDescriptor, []):
+                    if si.component_tag == 0x87:
+                        return tsmap.elementary_PID
+
+    def get_video_pid(self, video_encode_format):
+        """指定のエンコードフォーマットの動画PIDを返す"""
+
+        from ariblib.tables import ProgramAssociationTable, ProgramMapTable
+        from ariblib.descriptors import VideoDecodeControlDescriptor
+
+        pat = next(self.tables(ProgramAssociationTable))
+        ProgramMapTable._pids = list(pat.pmt_pids)
+        for pmt in self.tables(ProgramMapTable):
+            for tsmap in pmt.maps:
+                for vdc in tsmap.descriptors.get(VideoDecodeControlDescriptor, []):
+                    if vdc.video_encode_format == video_encode_format:
+                        return tsmap.elementary_PID
 
     def pcrs(self):
         """adaptation filed にある PCR から求めた timedelta オブジェクトを返す
