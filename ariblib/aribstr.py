@@ -12,22 +12,10 @@ Copyright (C) 2011 Yasumasa Murakami. All Rights Reserved.
 """
 
 class Code:
-    KANJI = 'KANJI'
-    ALPHANUMERIC = 'ALPHANUMERIC'
-    HIRAGANA = 'HIRAGANA'
-    KATAKANA = 'KATAKANA'
-    MOSAIC_A = 'MOSAIC_A'
-    MOSAIC_B = 'MOSAIC_B'
-    MOSAIC_C = 'MOSAIC_C'
-    MOSAIC_D = 'MOSAIC_D'
-    PROP_ALPHANUMERIC = 'PROP_ALPHANUMERIC'
-    PROP_HIRAGANA = 'PROP_HIRAGANA'
-    PROP_KATAKANA = 'PROP_KATAKANA'
-    JIS_X0201_KATAKANA = 'JIS_X0201_KATAKANA'
-    JIS_KANJI_PLANE_1 = 'JIS_KANJI_PLANE_1'
-    JIS_KANJI_PLANE_2 = 'JIS_KANJI_PLANE_2'
-    ADDITIONAL_SYMBOLS = 'ADDITIONAL_SYMBOLS'
-    UNSUPPORTED = 'UNSUPPORTED'
+    (KANJI, ALPHANUMERIC, HIRAGANA, KATAKANA, MOSAIC_A, MOSAIC_B, MOSAIC_C,
+     MOSAIC_D, PROP_ALPHANUMERIC, PROP_HIRAGANA, PROP_KATAKANA,
+     JIS_X0201_KATAKANA, JIS_KANJI_PLANE_1, JIS_KANJI_PLANE_2,
+     ADDITIONAL_SYMBOLS, UNSUPPORTED) = range(16)
 
 CODE_SET_G = {
         0x42:(Code.KANJI, 2),
@@ -100,14 +88,10 @@ ESC_SEQ_ZENKAKU = (0x1B, 0x24, 0x42)
 ESC_SEQ_HANKAKU = (0x1B, 0x28, 0x49)
 
 class Buffer:
-    G0 = 'G0'
-    G1 = 'G1'
-    G2 = 'G2'
-    G3 = 'G3'
+    G0, G1, G2, G3 = range(4)
 
 class CodeArea:
-    LEFT = 'LEFT'
-    RIGHT = 'RIGHT'
+    LEFT, RIGHT = range(2)
 
 class AribIndexError(Exception):
     pass
@@ -119,17 +103,18 @@ class DegignationError(Exception):
 class CodeSetController:
     def __init__(self):
         self.v_buffer = {
-                Buffer.G0:CODE_SET_G[0x42], # KANJI
-                Buffer.G1:CODE_SET_G[0x4a], # ALPHANUMERIC
-                Buffer.G2:CODE_SET_G[0x30], # HIRAGANA
-                Buffer.G3:CODE_SET_G[0x31], # KATAKANA
-                }
+            Buffer.G0:CODE_SET_G[0x42], # KANJI
+            Buffer.G1:CODE_SET_G[0x4a], # ALPHANUMERIC
+            Buffer.G2:CODE_SET_G[0x30], # HIRAGANA
+            Buffer.G3:CODE_SET_G[0x31], # KATAKANA
+        }
         self.single_shift = None
         self.graphic_left = Buffer.G0  # KANJI
         self.graphic_right = Buffer.G2 # HIRAGANA
         self.esc_seq_count = 0
         self.esc_buffer_index = Buffer.G0
         self.esc_drcs = False
+
     def degignate(self, code):
         if not code in CODE_SET_KEYS:
             raise DegignationError('esc_seq_count=%i esc_buffer_index=%s code=0x%02X' % (
@@ -139,6 +124,7 @@ class CodeSetController:
         else:
             self.v_buffer[self.esc_buffer_index] = CODE_SET_G[code]
         self.esc_seq_count = 0
+
     def invoke(self, buffer_index, area, locking_shift=True):
         if CodeArea.LEFT == area:
             if locking_shift:
@@ -148,17 +134,18 @@ class CodeSetController:
         elif CodeArea.RIGHT == area:
             self.graphic_right = buffer_index
         self.esc_seq_count = 0
+
     def get_current_code(self, data):
-        if   data >= 0x21 and data <= 0x7E:
+        if 0x21 <= data <= 0x7E:
             if self.single_shift:
                 code = self.v_buffer[self.single_shift]
                 self.single_shift = None
                 return code
-            else:
-                return self.v_buffer[self.graphic_left]
-        elif data >= 0xA1 and data <= 0xFE:
+            return self.v_buffer[self.graphic_left]
+        elif 0xA1 <= data <= 0xFE:
             return self.v_buffer[self.graphic_right]
         return None
+
     def set_escape(self, buffer_index, drcs):
         if buffer_index != None:
             self.esc_buffer_index = buffer_index
@@ -167,11 +154,13 @@ class CodeSetController:
 
 class AribArray(bytearray):
     esc_seq = None
+
     def pop0(self):
         try:
             return self.pop(0)
         except IndexError:
             raise AribIndexError
+
     def append_str(self, esc_seq, *string):
         if self.esc_seq != esc_seq:
             self.extend(esc_seq)
@@ -189,22 +178,28 @@ class AribString:
         self.utf_buffer = io.StringIO()
         self.utf_buffer_symbol = io.StringIO()
         self.split_symbol = False
+
     def __add__(self, other):
         self.arib_array += other.arib_array
         return self
+
     def __str__(self):
         return self.convert_utf().rstrip()
+
     def __nonzero__(self):
         return not self.arib_array
+
     def convert_utf_split(self):
         self.split_symbol = True
         self.convert()
         self.flush_jis_array()
         return (self.utf_buffer.getvalue(), self.utf_buffer_symbol.getvalue())
+
     def convert_utf(self, with_gaiji=True):
         self.convert(with_gaiji)
         self.flush_jis_array()
         return self.utf_buffer.getvalue()
+
     def flush_jis_array(self):
         if len(self.jis_array) > 0:
             try:
@@ -213,6 +208,7 @@ class AribString:
                 uni = 'UnicodeDecodeError'
             self.utf_buffer.write(uni)
             self.jis_array = AribArray()
+
     def convert(self, with_gaiji=True):
         while True:
             try:
@@ -220,7 +216,7 @@ class AribString:
                 if self.control.esc_seq_count:
                     self.do_escape(data)
                 else:
-                    if (data >= 0x21 and data <= 0x7E) or (data >= 0xA1 and data <= 0xFE):
+                    if 0x21 <= data <= 0x7E or 0xA1 <= data <= 0xFE:
                         # GL/GR Table
                         self.do_convert(data, with_gaiji)
                     elif data in (
@@ -238,15 +234,17 @@ class AribString:
             except AribIndexError:
                 break
         return self.jis_array
+
     def do_convert(self, data, with_gaiji=True):
-        (code, size) = self.control.get_current_code(data)
+        code, size = self.control.get_current_code(data)
         char = data
         char2 = 0x0
         if size == 2:
             char2 = self.arib_array.pop0()
-        if char >= 0xA1 and char <= 0xFE:
+        if 0xA1 <= char <= 0xFE:
             char = char & 0x7F
             char2 = char2 & 0x7F
+
         if code in (Code.KANJI, Code.JIS_KANJI_PLANE_1, Code.JIS_KANJI_PLANE_2):
             # 漢字コード出力
             self.jis_array.append_str(ESC_SEQ_ZENKAKU, char, char2)
@@ -281,8 +279,9 @@ class AribString:
                         self.utf_buffer.write(GAIJI_MAP_OTHER.get(wchar, "??"))
                 else:
                     self.utf_buffer.write(GAIJI_MAP.get(((char << 8) + char2), "??"))
+
     def do_control(self, data):
-        if   data == 0x0F:
+        if data == 0x0F:
             self.control.invoke(Buffer.G0, CodeArea.LEFT, True)  # LS0
         elif data == 0x0E:
             self.control.invoke(Buffer.G1, CodeArea.LEFT, True)  # LS1
@@ -292,9 +291,10 @@ class AribString:
             self.control.invoke(Buffer.G3, CodeArea.LEFT, False) # SS3
         elif data == 0x1B:
             self.control.esc_seq_count = 1
+
     def do_escape(self, data):
         if self.control.esc_seq_count == 1:
-            if   data == 0x6E:
+            if data == 0x6E:
                 self.control.invoke(Buffer.G2, CodeArea.LEFT, True)  # LS2
             elif data == 0x6F:
                 self.control.invoke(Buffer.G3, CodeArea.LEFT, True)  # LS3
@@ -304,7 +304,7 @@ class AribString:
                 self.control.invoke(Buffer.G2, CodeArea.RIGHT, True) # LS2R
             elif data == 0x7C:
                 self.control.invoke(Buffer.G3, CodeArea.RIGHT, True) # LS3R
-            elif data == 0x24 or data == 0x28:
+            elif data in (0x24, 0x28):
                 self.control.set_escape(Buffer.G0, False)
             elif data == 0x29:
                 self.control.set_escape(Buffer.G1, False)
@@ -316,7 +316,7 @@ class AribString:
                 raise EscapeSequenceError('esc_seq_count=%i data=0x%02X' % (
                         self.control.esc_seq_count, data))
         elif self.control.esc_seq_count == 2:
-            if   data == 0x20:
+            if data == 0x20:
                 self.control.set_escape(None, True)
             elif data == 0x28:
                 self.control.set_escape(Buffer.G0, False)
@@ -335,6 +335,7 @@ class AribString:
                 self.control.degignate(data)
         elif self.control.esc_seq_count == 4:
             self.control.degignate(data)
+
     def __repr__(self):
         return self.convert_utf()
 
