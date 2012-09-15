@@ -495,7 +495,7 @@ class AccessControlDescriptor(Descriptor):
     CA_system_ID = uimsbf(16)
     transmission_type = bslbf(3)
     PID = uimsbf(13)
-    private_data_byte = bslbf(lambda self: self.descriptor_length - 3)
+    private_data_byte = bslbf(lambda self: self.descriptor_length - 4)
 
 class TerrestrialDeliverySystemDescriptor(Descriptor):
 
