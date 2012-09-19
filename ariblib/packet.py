@@ -52,9 +52,17 @@ class TransportStreamFile(BufferedReader):
                 buffer = buf[PID]
                 prev, current = payload(packet)
                 if payload_unit_start_indicator(packet):
-                    if (buffer and buffer[0] in Table._table_ids):
+                    if buffer:
                         buffer.extend(prev)
-                        yield Table(buffer[:])
+                    packet = buffer[:]
+                    while packet and packet[0] in Table._table_ids:
+                        table = Table(packet)
+                        yield table
+                        next_start = table.section_length + 3
+                        try:
+                            packet = packet[next_start:]
+                        except IndexError:
+                            break
                     buffer[:] = current
                 elif not buffer:
                     continue
