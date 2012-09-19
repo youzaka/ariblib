@@ -164,7 +164,9 @@ class ExtendedEventDescriptor(Descriptor):
         item_description_length = uimsbf(8)
         item_description_char = aribstr(item_description_length)
         item_length = uimsbf(8)
-        item_char = aribstr(item_length)
+        # マルチバイトの途中でitemが別れていることがあるので、
+        # ここでaribstrとしてパースすると文字化けすることがある
+        item_char = raw(item_length)
 
     text_length = uimsbf(8)
     text_char = aribstr(text_length)
