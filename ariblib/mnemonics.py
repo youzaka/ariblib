@@ -217,8 +217,7 @@ class case_table(fixed_count_loop):
     def __get__(self, instance, owner):
         if self.condition(instance):
             start = self.start(instance) // 8
-            obj = self.cls(instance._packet[start:])
-            return obj
+            return self.cls(instance._packet[start:])
         return None
 
     def real_length(self, instance):
