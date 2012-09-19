@@ -109,13 +109,24 @@ class TransportStreamFile(BufferedReader):
                        ((packet[10] & 0x80) >> 7))
                 yield timedelta(seconds=pcr/90000)
 
+def transport_error_indicator(packet):
+    """パケットの transport_error_indocator を返す"""
+    return (packet[1] & 0x80) >> 7
+
 def payload_unit_start_indicator(packet):
     """パケットの payload_unit_start_indicator を返す"""
-    return (packet[1] & 0x40) >> 5
+    return (packet[1] & 0x40) >> 6
+
+def transport_priority(pakcet):
+    """パケットの transport_priority を返す"""
+    return (packet[1] & 0x20) >> 5
 
 def pid(packet):
     """パケットの pid を返す"""
     return ((packet[1] & 0x1F) << 8) | packet[2]
+
+def transport_scrambling_control(packet):
+    return (packet[3] & 0xC0) >> 6
 
 def has_adaptation(packet):
     """このパケットが adaptation field を持っているかどうかを返す"""
