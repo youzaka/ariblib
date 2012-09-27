@@ -37,32 +37,6 @@ class Descriptor(Syntax):
 
     @staticmethod
     def get(tag):
-        tags = {
-            0x09: CAIdentifierDescriptor,
-            0x0D: CopyrightDescriptor,
-            0x41: ServiceListDescriptor,
-            0x48: ServiceDescriptor,
-            0x4A: LinkageDescriptor,
-            0x4D: ShortEventDescriptor,
-            0x4E: ExtendedEventDescriptor,
-            0x50: ComponentDescriptor,
-            0x52: StreamIdentifierDescriptor,
-            0x54: ContentDescriptor,
-            0xC1: DigitalCopyControlDescriptor,
-            0xC4: AudioComponentDescriptor,
-            0xC5: HyperLinkDescriptor,
-            0xC7: DataContentDescriptor,
-            0xC8: VideoDecodeControlDescriptor,
-            0xCB: EncryptDescriptor,
-            0xCD: TSInformationDescriptor,
-            0xCF: LogoTransmissionDescriptor,
-            0xD6: EventGroupDescriptor,
-            0xDE: ContentAvailabilityDescriptor,
-            0xF6: AccessControlDescriptor,
-            0xFA: TerrestrialDeliverySystemDescriptor,
-            0XFB: PartialReceptionDescriptor,
-            0xFD: DataComponentDescriptor,
-        }
         return tags.get(tag, Descriptor)
 
 
@@ -597,4 +571,32 @@ class DataComponentDescriptor(Descriptor):
     @case(lambda self: self.data_component_id not in (0x07, 0x08))
     class default_component(Syntax):
         additional_data_component_info = uimsbf(lambda self: self.descriptor_length - 2)
+
+#FIXME: わざわざこの辞書を明示したくない
+tags = {
+    0x09: CAIdentifierDescriptor,
+    0x0D: CopyrightDescriptor,
+    0x41: ServiceListDescriptor,
+    0x48: ServiceDescriptor,
+    0x4A: LinkageDescriptor,
+    0x4D: ShortEventDescriptor,
+    0x4E: ExtendedEventDescriptor,
+    0x50: ComponentDescriptor,
+    0x52: StreamIdentifierDescriptor,
+    0x54: ContentDescriptor,
+    0xC1: DigitalCopyControlDescriptor,
+    0xC4: AudioComponentDescriptor,
+    0xC5: HyperLinkDescriptor,
+    0xC7: DataContentDescriptor,
+    0xC8: VideoDecodeControlDescriptor,
+    0xCB: EncryptDescriptor,
+    0xCD: TSInformationDescriptor,
+    0xCF: LogoTransmissionDescriptor,
+    0xD6: EventGroupDescriptor,
+    0xDE: ContentAvailabilityDescriptor,
+    0xF6: AccessControlDescriptor,
+    0xFA: TerrestrialDeliverySystemDescriptor,
+    0XFB: PartialReceptionDescriptor,
+    0xFD: DataComponentDescriptor,
+}
 
