@@ -492,6 +492,8 @@ class AccessControlDescriptor(Descriptor):
 
     """アクセス制御記述子 (ARIB-TR-B14 第四篇改定案 30.2.2.2"""
 
+    _tag = 0xF6
+
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     CA_system_ID = uimsbf(16)
@@ -536,6 +538,7 @@ class DataComponentDescriptor(Descriptor):
     字幕・文字スーパーの識別情報が入っている(ARIB-STD-B24-1-3-9.6.1)
 
     """
+
     _tag = 0xFD
 
     descriptor_tag = uimsbf(8)
