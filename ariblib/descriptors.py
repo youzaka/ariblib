@@ -364,7 +364,7 @@ class DataContentDescriptor(Descriptor):
     class component_refs(Syntax):
         component_ref = uimsbf(8)
 
-    ISO_639_language_code_n = char(24)
+    ISO_639_language_code = char(24)
     text_length = uimsbf(8)
     data_text = aribstr(text_length)
 
