@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.2
 
-"""各種 PSI テーブルの定義"""
+"""各種 PSI セクションの定義"""
 
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -10,9 +10,9 @@ from ariblib.descriptors import descriptors
 from ariblib.mnemonics import bcd, bslbf, loop, rpchof, mjd, uimsbf
 from ariblib.syntax import Syntax
 
-class Table(Syntax):
+class Section(Syntax):
 
-    """テーブルの親クラス
+    """セクションの親クラス
 
     PSI はこれの子クラスとする。字幕 PES も便宜的にそうする
     """
@@ -24,14 +24,14 @@ class Table(Syntax):
         if result is not None:
             return result
 
-        # Table からサブシンタックスを全て走査しても見つからなかった場合は
+        # Section からサブシンタックスを全て走査しても見つからなかった場合は
         # AttributeError を投げる
         raise AttributeError("'{}' object has no attribute '{}'".format(
             self.__class__.__name__, name))
 
-class ProgramAssociationTable(Table):
+class ProgramAssociationSection(Section):
 
-    """Program Association Table PAT (ISO 13818-1 2.4.4.3)"""
+    """Program Association Section PAT (ISO 13818-1 2.4.4.3)"""
 
     _pids = [0x00]
     _table_ids = [0x00]
@@ -70,9 +70,9 @@ class ProgramAssociationTable(Table):
             if pid.program_number:
                 yield pid.program_map_PID
 
-class ProgramMapTable(Table):
+class ProgramMapSection(Section):
 
-    """Program Map Table PMT (ISO 13818-1 2.4.4.8)"""
+    """Program Map Section PMT (ISO 13818-1 2.4.4.8)"""
 
     _table_ids = [0x02]
 
@@ -138,9 +138,9 @@ class ProgramMapTable(Table):
             if stream.stream_type in audio_types:
                 yield stream.elementary_PID
 
-class NetworkInformationTable(Table):
+class NetworkInformationSection(Section):
 
-    """ネットワーク情報テーブル NIT (ARIB-STD-B10-2-5.2.4)"""
+    """ネットワーク情報セクション NIT (ARIB-STD-B10-2-5.2.4)"""
 
     _pids = [0x10]
     _table_ids = [0x40, 0x41]
@@ -172,9 +172,9 @@ class NetworkInformationTable(Table):
 
     CRC_32 = rpchof(32)
 
-class ServiceDescriptionTable(Table):
+class ServiceDescriptionSection(Section):
 
-    """サービス記述テーブル SDT (ARIB-STD-B10-2-5.2.6)"""
+    """サービス記述セクション SDT (ARIB-STD-B10-2-5.2.6)"""
 
     _pids = [0x11]
     _table_ids = [0x42, 0x46]
@@ -207,9 +207,9 @@ class ServiceDescriptionTable(Table):
 
     CRC_32 = rpchof(32)
 
-class BouquetAssociationTable(Table):
+class BouquetAssociationSection(Section):
 
-    """ブーケアソシエーションテーブル BAT (ARIB-STD-B10-2-5.2.5)"""
+    """ブーケアソシエーションセクション BAT (ARIB-STD-B10-2-5.2.5)"""
 
     _pids = [0x11]
     _table_ids = [0x4A]
@@ -241,9 +241,9 @@ class BouquetAssociationTable(Table):
 
     CRC_32 = rpchof(32)
 
-class EventInformationTable(Table):
+class EventInformationSection(Section):
 
-    """イベント情報テーブル EIT (ARIB-STD-B10-2-5.2.7)"""
+    """イベント情報セクション EIT (ARIB-STD-B10-2-5.2.7)"""
 
     _pids = [0x12, 0x26, 0x27]
     _table_ids = range(0x4E, 0x70)
@@ -276,9 +276,9 @@ class EventInformationTable(Table):
 
     CRC_32 = rpchof(32)
 
-class RunningStatusTable(Table):
+class RunningStatusSection(Section):
 
-    """進行状態テーブル RST (ARIB-STD-B10-2-5.2.10)"""
+    """進行状態セクション RST (ARIB-STD-B10-2-5.2.10)"""
 
     _pids = [0x13]
     _table_ids = [0x71]
@@ -298,9 +298,9 @@ class RunningStatusTable(Table):
         reserved_future_use = bslbf(5)
         running_status = uimsbf(3)
 
-class TimeAndDateTable(Table):
+class TimeAndDateSection(Section):
 
-    """時刻日付テーブル TDT (ARIB-STD-B10-2-5.2.8)"""
+    """時刻日付セクション TDT (ARIB-STD-B10-2-5.2.8)"""
 
     _pids = [0x14]
     _table_ids = [0x70]
@@ -312,9 +312,9 @@ class TimeAndDateTable(Table):
     section_length = uimsbf(12)
     JST_time = mjd(40)
 
-class TimeOffsetTable(Table):
+class TimeOffsetSection(Section):
 
-    """時刻日付オフセットテーブル TOT (ARIB-STD-B10-2-5.2.9)"""
+    """時刻日付オフセットセクション TOT (ARIB-STD-B10-2-5.2.9)"""
 
     _pids = [0x14]
     _table_ids = [0x73]
@@ -330,9 +330,9 @@ class TimeOffsetTable(Table):
     descriptors = descriptors(descriptors_loop_length)
     CRC_32 = rpchof(32)
 
-class LocalEventInformationTable(Table):
+class LocalEventInformationSection(Section):
 
-    """ローカルイベント情報テーブル LIT (ARIB-STD-B10-2-5.1.1)"""
+    """ローカルイベント情報セクション LIT (ARIB-STD-B10-2-5.1.1)"""
 
     _pids = [0x20]
     _table_ids = [0xD0]
@@ -361,9 +361,9 @@ class LocalEventInformationTable(Table):
 
     CRC_32 = rpchof(32)
 
-class EventRelationTable(Table):
+class EventRelationSection(Section):
 
-    """イベント関係テーブル ERT (ARIB-STD-B10-2-5.1.2)"""
+    """イベント関係セクション ERT (ARIB-STD-B10-2-5.1.2)"""
 
     _pids = [0x21]
     _table_ids = [0xD1]
@@ -396,9 +396,9 @@ class EventRelationTable(Table):
 
     CRC_32 = rpchof(32)
 
-class IndexTransmissionTable(Table):
+class IndexTransmissionSection(Section):
 
-    """番組インデックス送出情報テーブル ITT (ARIB-STD-B10-2-5.1.3)"""
+    """番組インデックス送出情報セクション ITT (ARIB-STD-B10-2-5.1.3)"""
 
     _table_ids = [0xD2]
 
@@ -418,9 +418,9 @@ class IndexTransmissionTable(Table):
     descriptors = descriptors(descriptors_loop_length)
     CRC_32 = rpchof(32)
 
-class PartialContentAnnouncementTable(Table):
+class PartialContentAnnouncementSection(Section):
 
-    """差分配信告知テーブル PCAT (ARIB-STD-B10-2-5.2.12)"""
+    """差分配信告知セクション PCAT (ARIB-STD-B10-2-5.2.12)"""
 
     _pids = [0x22]
     _table_ids = [0xC2]
@@ -453,9 +453,9 @@ class PartialContentAnnouncementTable(Table):
 
     CRC_32 = rpchof(32)
 
-class StuffingTable(Table):
+class StuffingSection(Section):
 
-    """スタッフテーブル ST (ARIB-STD-B10-2.5.2.11)"""
+    """スタッフセクション ST (ARIB-STD-B10-2.5.2.11)"""
 
     _table_ids = [0x72]
 
@@ -469,9 +469,9 @@ class StuffingTable(Table):
     class data(Syntax):
         data_byte = uimsbf(8)
 
-class BroadcasterInformationTable(Table):
+class BroadcasterInformationSection(Section):
 
-    """ブロードキャスタ情報テーブル BIT (ARIB-STD-B10-2-5.2.13)"""
+    """ブロードキャスタ情報セクション BIT (ARIB-STD-B10-2-5.2.13)"""
 
     _pids = [0x24]
     _table_ids = [0xC4]
@@ -502,9 +502,9 @@ class BroadcasterInformationTable(Table):
 
     CRC_32 = rpchof(32)
 
-class NetworkBoardInformationTable(Table):
+class NetworkBoardInformationSection(Section):
 
-    """ネットワーク掲示板情報テーブル NBIT (ARIB-STD-B10-2-5.14)
+    """ネットワーク掲示板情報セクション NBIT (ARIB-STD-B10-2-5.14)
 
     FIXME: 未実装
     """
@@ -512,9 +512,9 @@ class NetworkBoardInformationTable(Table):
     _pids = [0x25]
     _table_ids = [0x40, 0x41]
 
-class CommonDataTable(Table):
+class CommonDataSection(Section):
 
-    """全受信機共通データテーブル CDT (ARIB-STD-B21-12.2.2.2)"""
+    """全受信機共通データセクション CDT (ARIB-STD-B21-12.2.2.2)"""
 
     _pids = [0x29]
     _table_ids = [0xC8]
@@ -543,16 +543,16 @@ class CommonDataTable(Table):
 
     CRC_32 = rpchof(32)
 
-class LinkedDescriptionTable(Table):
+class LinkedDescriptionSection(Section):
 
-    """リンク記述テーブル (ARIB-STD-B10-2-5.2.15)
+    """リンク記述セクション (ARIB-STD-B10-2-5.2.15)
 
     FIXME: 未実装
     """
 
     _table_ids = [0xC7]
 
-class EntitlementControlMessage(Table):
+class EntitlementControlMessage(Section):
 
     """ARIB-STD-B1, B21
 
@@ -561,7 +561,7 @@ class EntitlementControlMessage(Table):
 
     _table_ids = [0x82, 0x83]
 
-class SoftwareDownloadTriggerTable(Table):
+class SoftwareDownloadTriggerSection(Section):
 
     """ARIB-STD-B1, B21
 
@@ -570,7 +570,7 @@ class SoftwareDownloadTriggerTable(Table):
 
     _table_ids = [0xC3]
 
-class CommonDataTable(Table):
+class CommonDataSection(Section):
 
     """ARIB-STD-B1, B21
 
@@ -579,7 +579,7 @@ class CommonDataTable(Table):
 
     _pids = [0x29]
 
-class DSMCCSection(Table):
+class DSMCCSection(Section):
 
     """ARIB-STD-B24-3-6.5
 

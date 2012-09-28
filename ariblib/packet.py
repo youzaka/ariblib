@@ -7,7 +7,7 @@ from io import BufferedReader, FileIO
 from ariblib.mnemonics import (bcd, bslbf, case, char, loop, otm, raw, times,
                                uimsbf)
 from ariblib.syntax import Syntax
-from ariblib.tables import Table
+from ariblib.sections import Section
 
 """
 パケット層の定義
@@ -37,13 +37,13 @@ class TransportStreamFile(BufferedReader):
     def __next__(self):
         return self.read(self.PACKET_SIZE)
 
-    def tables(self, Table):
-        """パケットストリームから指定のテーブルを返す"""
+    def sections(self, Section):
+        """パケットストリームから指定のセクションを返す"""
 
         buf = defaultdict(bytearray)
 
         try:
-            pids = Table._pids
+            pids = Section._pids
             for packet in self:
                 PID = pid(packet)
                 if PID not in pids:
@@ -55,11 +55,11 @@ class TransportStreamFile(BufferedReader):
                     if buffer:
                         buffer.extend(prev)
                     while buffer and buffer[0] != 0xFF:
-                        table = Table(buffer[:])
-                        if buffer[0] in Table._table_ids:
-                            yield table
+                        section = Section(buffer[:])
+                        if buffer[0] in Section._table_ids:
+                            yield section
                         try:
-                            next_start = table.section_length + 3
+                            next_start = section.section_length + 3
                             buffer[:] = buffer[next_start:]
                         except (IndexError, AttributeError):
                             break
@@ -77,12 +77,12 @@ class TransportStreamFile(BufferedReader):
         FIXME: 2か国語対応の場合複数の PID で字幕が提供されているかも? (未確認)
         """
 
-        from ariblib.tables import ProgramAssociationTable, ProgramMapTable
+        from ariblib.sections import ProgramAssociationSection, ProgramMapSection
         from ariblib.descriptors import StreamIdentifierDescriptor
 
-        pat = next(self.tables(ProgramAssociationTable))
-        ProgramMapTable._pids = list(pat.pmt_pids)
-        for pmt in self.tables(ProgramMapTable):
+        pat = next(self.sections(ProgramAssociationSection))
+        ProgramMapSection._pids = list(pat.pmt_pids)
+        for pmt in self.sections(ProgramMapSection):
             for tsmap in pmt.maps:
                 if tsmap.stream_type != 0x06:
                     continue
@@ -93,12 +93,12 @@ class TransportStreamFile(BufferedReader):
     def get_video_pid(self, video_encode_format):
         """指定のエンコードフォーマットの動画PIDを返す"""
 
-        from ariblib.tables import ProgramAssociationTable, ProgramMapTable
+        from ariblib.sections import ProgramAssociationSection, ProgramMapSection
         from ariblib.descriptors import VideoDecodeControlDescriptor
 
-        pat = next(self.tables(ProgramAssociationTable))
-        ProgramMapTable._pids = list(pat.pmt_pids)
-        for pmt in self.tables(ProgramMapTable):
+        pat = next(self.sections(ProgramAssociationSection))
+        ProgramMapSection._pids = list(pat.pmt_pids)
+        for pmt in self.sections(ProgramMapSection):
             for tsmap in pmt.maps:
                 for vdc in tsmap.descriptors.get(VideoDecodeControlDescriptor, []):
                     if vdc.video_encode_format == video_encode_format:
@@ -222,7 +222,7 @@ class AdaptationField(Syntax):
         private_data_byte = bslbf(transport_private_data_length)
 
 
-class SynchronizedPacketizedElementaryStream(Table):
+class SynchronizedPacketizedElementaryStream(Section):
 
     """ISO/IEC 13818-1 2.4.3.7
 

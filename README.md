@@ -7,7 +7,7 @@ Python 3.2 での動作が前提ですが、3.1 でも動くかもしれませ�
 ARIB-STD で定義されているデータ構造をなるべく近い形で
 Python コードとして記述できるようにしています。
 
-たとえば、 Program Map Table のデータ構造は ARIB-STD-B10 第2部付録E 表E-3 で
+たとえば、 Program Map Section のデータ構造は ARIB-STD-B10 第2部付録E 表E-3 で
 以下のように記述されています:
 
 ```
@@ -45,7 +45,7 @@ TS_program_map_section(){
 これを ariblib では以下のように記述します。 (説明に必要でない行は省略しています)
 ```python
 
-class ProgramMapTable(Table):
+class ProgramMapSection(Section):
     table_id = uimsbf(8)
     section_syntax_indicator = bslbf(1)
     reserved_future_use = bslbf(1)
@@ -86,7 +86,7 @@ import sys
 from ariblib import TransportStreamFile
 from ariblib.caption import CProfileString
 from ariblib.packet import SynchronizedPacketizedElementaryStream
-from ariblib.tables import TimeOffsetTable
+from ariblib.sections import TimeOffsetSection
 
 with TransportStreamFile(sys.argv[1]) as ts:
     SynchronizedPacketizedElementaryStream._pids = [ts.get_caption_pid()]
@@ -95,9 +95,9 @@ with TransportStreamFile(sys.argv[1]) as ts:
     # 字幕の表示された時刻を計算します (若干誤差が出ます)
     # PCR が一周した場合の処理は実装されていません
     base_pcr = next(ts.pcrs())
-    base_time = next(ts.tables(TimeOffsetTable)).JST_time
+    base_time = next(ts.sections(TimeOffsetSection)).JST_time
 
-    for spes in ts.tables(SynchronizedPacketizedElementaryStream):
+    for spes in ts.sections(SynchronizedPacketizedElementaryStream):
         caption_date = base_time + (spes.pts - base_pcr)
         for data in spes.data_units:
             print(caption_date, CProfileString(data.data_unit_data))
@@ -110,7 +110,7 @@ import sys
 
 from ariblib import TransportStreamFile
 from ariblib.descriptors import ShortEventDescriptor
-from ariblib.tables import EventInformationTable
+from ariblib.sections import EventInformationSection
 
 def show_program(eit):
     event = eit.events.__next__()
@@ -120,10 +120,10 @@ def show_program(eit):
 
 with TransportStreamFile(sys.argv[1]) as ts:
     # 自ストリームの現在と次の番組を表示する
-    EventInformationTable._table_ids = [0x4E]
-    current = next(table for table in ts.tables(EventInformationTable)
+    EventInformationSection._table_ids = [0x4E]
+    current = next(table for table in ts.sections(EventInformationSection)
                    if table.section_number == 0)
-    following = next(table for table in ts.tables(EventInformationTable)
+    following = next(table for table in ts.sections(EventInformationSection)
                      if table.section_number == 1)
     print('今の番組', show_program(current))
     print('次の番組', show_program(following))
@@ -138,10 +138,10 @@ import sys
 from ariblib import TransportStreamFile
 from ariblib.constant import SERVICE_TYPES
 from ariblib.descriptors import ServiceDescriptor
-from ariblib.tables import ServiceDescriptionTable
+from ariblib.sections import ServiceDescriptionSection
 
 with TransportStreamFile(sys.argv[1]) as ts:
-    for sdt in ts.tables(ServiceDescriptionTable):
+    for sdt in ts.sections(ServiceDescriptionSection):
         for service in sdt.services:
             for sd in service.descriptors[ServiceDescriptor]:
                 print(service.service_id, SERVICE_TYPE[sd.service_type],
@@ -156,12 +156,12 @@ import sys
 from ariblib import TransportStreamFile
 from ariblib.constants import VIDEO_ENCODE_FORMATS
 from ariblib.descriptors import VideoDecodeControlDescriptor
-from ariblib.tables import ProgramAssociationTable, ProgramMapTable
+from ariblib.sections import ProgramAssociationSection, ProgramMapSection
 
 with TransportStreamFile(sys.argv[1]) as ts:
-    pat = next(ts.tables(ProgramAssociationTable))
-    ProgramMapTable._pids = list(pat.pmt_pids)
-    for pmt in ts.tables(ProgramMapTable):
+    pat = next(ts.sections(ProgramAssociationSection))
+    ProgramMapSection._pids = list(pat.pmt_pids)
+    for pmt in ts.sections(ProgramMapSection):
         for tsmap in pmt.maps:
             for vd in tsmap.descriptors.get(VideoDecodeControlDescriptor, []):
                 print(tsmap.elementary_PID, VIDEO_ENCODE_FORMAT[vd.video_encode_format])
@@ -176,12 +176,12 @@ from ariblib import TransportStreamFile
 from ariblib.aribstr import AribString
 from ariblib.constants import *
 from ariblib.descriptors import *
-from ariblib.tables import EventInformationTable
+from ariblib.sections import EventInformationSection
 
 with TransportStreamFile(sys.argv[1]) as ts:
     # 表示対象を「自ストリーム、スケジュール」とする
-    EventInformationTable._table_ids = range(0x50, 0x60)
-    for eit in ts.tables(EventInformationTable):
+    EventInformationSection._table_ids = range(0x50, 0x60)
+    for eit in ts.sections(EventInformationSection):
         for event in eit.events:
             print('service_id', eit.service_id)
             print('event_id:', event.event_id)
@@ -237,11 +237,11 @@ import sys
 
 from ariblib import TransportStreamFile
 from ariblib.descriptors import ContentDescriptor, ShortEventDescriptor
-from ariblib.tables import EventInformationTable
+from ariblib.sections import EventInformationSection
 
 with TransportStreamFile(sys.argv[1]) as ts:
-    EventInformationTable._table_ids = range(0x50, 0x70)
-    for eit in ts.tables(EventInformationTable):
+    EventInformationSection._table_ids = range(0x50, 0x70)
+    for eit in ts.sections(EventInformationSection):
         for event in eit.events:
             for genre in event.descriptors.get(ContentDescriptor, []):
                 nibble = next(genre.nibbles)
