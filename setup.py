@@ -15,7 +15,7 @@ setup(name='ariblib',
         'Natural Language :: Japanese'
       ],
       license='MIT',
-      short_description='python implementation of arib-std-b10 and arib-std-b24',
+      description='python implementation of arib-std-b10 and arib-std-b24',
       packages=find_packages(),
 )
 
