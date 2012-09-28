@@ -54,14 +54,14 @@ class TransportStreamFile(BufferedReader):
                 if payload_unit_start_indicator(packet):
                     if buffer:
                         buffer.extend(prev)
-                    packet = buffer[:]
-                    while packet and packet[0] in Table._table_ids:
-                        table = Table(packet)
-                        yield table
-                        next_start = table.section_length + 3
+                    while buffer and buffer[0] != 0xFF:
+                        table = Table(buffer[:])
+                        if buffer[0] in Table._table_ids:
+                            yield table
                         try:
-                            packet = packet[next_start:]
-                        except IndexError:
+                            next_start = table.section_length + 3
+                            buffer[:] = buffer[next_start:]
+                        except (IndexError, AttributeError):
                             break
                     buffer[:] = current
                 elif not buffer:
