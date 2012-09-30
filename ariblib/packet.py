@@ -202,13 +202,13 @@ class AdaptationField(Syntax):
 
     @case(PCR_flag)
     class with_PCR(Syntax):
-        program_crock_reference_base = uimsbf(33)
+        program_clock_reference_base = uimsbf(33)
         reserved_1 = bslbf(6)
         program_clock_reference_extension = uimsbf(9)
 
     @case(OPCR_flag)
     class with_OPCR(Syntax):
-        original_program_crock_reference_base = uimsbf(33)
+        original_program_clock_reference_base = uimsbf(33)
         reserved_2 = bslbf(6)
         original_program_clock_reference_extension = uimsbf(9)
 
@@ -220,7 +220,6 @@ class AdaptationField(Syntax):
     class with_transport_private_data(Syntax):
         transport_private_data_length = uimsbf(8)
         private_data_byte = bslbf(transport_private_data_length)
-
 
 class SynchronizedPacketizedElementaryStream(Section):
 
@@ -337,4 +336,7 @@ class SynchronizedPacketizedElementaryStream(Section):
         pts_hz = 90000
         second = pts / pts_hz
         return timedelta(seconds=second)
+
+def raw_dump(packet):
+    return ' '.join(map(lambda s: format(s, '02X'), packet))
 
