@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.2
 """セクションとテーブルの違いがわからない頃の実装の後方互換"""
-from sections import *
+from ariblib.sections import *
 
 Table = Section
 ProgramAssociationTable = ProgramAssociationSection
