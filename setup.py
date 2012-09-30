@@ -1,9 +1,10 @@
 #!/usr/bin/env python3.2
 
 from setuptools import setup, find_packages
+from ariblib import __version__
 
 setup(name='ariblib',
-      version='0.0.2',
+      version=__version__,
       author='Chisa Youzaka',
       author_email='ariblib@txqz.net',
       url='http://github.com/youzaka/ariblib',
