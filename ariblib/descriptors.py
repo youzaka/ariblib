@@ -383,7 +383,7 @@ class TSInformationDescriptor(Descriptor):
         transmission_type_info = bslbf(8)
         num_of_service = uimsbf(8)
 
-        @times(lambda self: self.num_of_services)
+        @times(num_of_service)
         class services(Syntax):
             service_id = uimsbf(16)
 
