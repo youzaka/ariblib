@@ -397,6 +397,61 @@ class TSInformationDescriptor(Descriptor):
         class services(Syntax):
             service_id = uimsbf(16)
 
+class ExtendedBroadcasterDescriptor(Descriptor):
+
+    """拡張ブロードキャスタ記述子(ARIB-STD-B10-2-6.2.43)"""
+
+    _tag = 0xCF
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    broadcaster_type = uimsbf(4)
+    reserved_future_use = bslbf(4)
+
+    @case(lambda self: self.broadcaster_type == 0x1)
+    class type_1(Syntax):
+        terrestrial_broadcaster_id = uimsbf(16)
+        number_of_affiliation_id_loop = uimsbf(4)
+        number_of_broadcaster_id_loop = uimsbf(4)
+
+        @times(number_of_affiliation_id_loop)
+        class affiliations(Syntax):
+            affiliation_id = uimsbf(8)
+
+        @times(number_of_broadcaster_id_loop)
+        class broadcasters(Syntax):
+            original_network_id = uimsbf(8)
+            broadcaster_id = uimsbf(8)
+
+        private_data_byte = bslbf(lambda self:
+            self.descriptor_length - (
+                4 + self.number_of_affiliation_id_loop +
+                self.number_of_broadcaster_id_loop * 3))
+
+    @case(lambda self: self.broadcaster_type == 0x2)
+    class type_2(Syntax):
+        terrestrial_sound_broadcaster_id = uimsbf(16)
+        number_of_sound_broadcast_affiliation_id_loop = uimsbf(4)
+        number_of_broadcaster_id_loop = uimsbf(4)
+
+        @times(number_of_sound_broadcast_affiliation_id_loop)
+        class sound_broadcast_affiliations(Syntax):
+            sound_broadcast_affiliations_id = uimsbf(8)
+
+        @times(number_of_broadcaster_id_loop)
+        class broadcasters(Syntax):
+            original_network_id = uimsbf(8)
+            broadcaster_id = uimsbf(8)
+
+        private_data_byte = bslbf(lambda self:
+            self.descriptor_length - (
+                4 + self.number_of_sound_broadcast_affiliation_id_loop +
+                self.number_of_broadcaster_id_loop * 3))
+
+    @case(lambda self: self.broadcaster_type not in (0x1, 0x2))
+    class type_other(Syntax):
+        reserved_future_use = bslbf(lambda self: self.description_length -1)
+
 class LogoTransmissionDescriptor(Descriptor):
 
     """ロゴ伝送記述子(ARIB-STD-B10-2-6.2.44)"""
@@ -455,6 +510,27 @@ class EventGroupDescriptor(Descriptor):
     class without_network(Syntax):
         private_data_byte = aribstr(lambda self:
             self.descriptor_length - 1 - self.event_count * 4)
+
+class SIParameterDescriptor(Descriptor):
+
+    """SI伝送パラメータ記述子(ARIB-STD-B10-2-6.2.35)"""
+
+    _tag = 0xD7
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    parameter_version = uimsbf(8)
+    update_time = uimsbf(16)
+
+    @loop(lambda self: self.descriptor_length - 3)
+    class parameters(Syntax):
+        table_id = uimsbf(8)
+        table_description_length = uimsbf(8)
+
+        @loop(lambda self: self.table_description_length)
+        class descriptions(Syntax):
+            table_description_byte = uimsbf(8)
+
 
 class ContentAvailabilityDescriptor(Descriptor):
 
@@ -613,8 +689,10 @@ tags = {
     0xC8: VideoDecodeControlDescriptor,
     0xCB: EncryptDescriptor,
     0xCD: TSInformationDescriptor,
+    0xCE: ExtendedBroadcasterDescriptor,
     0xCF: LogoTransmissionDescriptor,
     0xD6: EventGroupDescriptor,
+    0xD7: SIParameterDescriptor,
     0xDE: ContentAvailabilityDescriptor,
     0xF6: AccessControlDescriptor,
     0xFA: TerrestrialDeliverySystemDescriptor,
