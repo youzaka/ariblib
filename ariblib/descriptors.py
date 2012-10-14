@@ -64,9 +64,19 @@ class CopyrightDescriptor(Descriptor):
     copyright_identifier = uimsbf(32)
     additional_copyright_info = bslbf(lambda self: self.descriptor_length - 4)
 
+class NetworkNameDescriptor(Descriptor):
+
+    """ネットワーク名記述子(ARIB-STD-B10-2.6.2.11)"""
+
+    _tag = 0x40
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    char = aribstr(descriptor_length)
+
 class ServiceListDescriptor(Descriptor):
 
-    """サービスリスト記述子(ARIB-STD-B10-2-6.14)"""
+    """サービスリスト記述子(ARIB-STD-B10-2-6.2.14)"""
 
     _tag = 0x41
 
@@ -572,10 +582,22 @@ class DataComponentDescriptor(Descriptor):
     class default_component(Syntax):
         additional_data_component_info = uimsbf(lambda self: self.descriptor_length - 2)
 
+class SystemManagementDescriptor(Descriptor):
+
+    """システム管理記述子(ARIB-STD-B10-2-6.2.21)"""
+
+    _tag = 0xFE
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    system_management_id = uimsbf(16)
+    additional_identification_info = uimsbf(lambda self: self.descriptor_length - 2)
+
 #FIXME: わざわざこの辞書を明示したくない
 tags = {
     0x09: CAIdentifierDescriptor,
     0x0D: CopyrightDescriptor,
+    0x40: NetworkNameDescriptor,
     0x41: ServiceListDescriptor,
     0x48: ServiceDescriptor,
     0x4A: LinkageDescriptor,
@@ -598,5 +620,6 @@ tags = {
     0xFA: TerrestrialDeliverySystemDescriptor,
     0XFB: PartialReceptionDescriptor,
     0xFD: DataComponentDescriptor,
+    0xFE: SystemManagementDescriptor,
 }
 
