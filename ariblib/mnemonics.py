@@ -201,6 +201,10 @@ class fixed_count_loop(mnemonic):
             return getattr(instance, self.count)
         return self.count
 
+    def real_length(self, instance):
+        return sum(len(object) for object in
+                   self.__get__(instance, instance.__class__))
+
 class case_table(fixed_count_loop):
 
     """if"""
@@ -230,8 +234,11 @@ class case_table(fixed_count_loop):
 
 def bin_dump(target):
     """バイナリダンプ"""
-    binary = map(ord, target)
     return ' '.join(map(lambda x: format(x, '08b'), binary))
+
+def hex_dump(target):
+    """16進ダンプ"""
+    return ' '.join(map(lambda x: format(x, '02X'), binary))
 
 def mjd2datetime(pmjd):
     """mjdを年月日時分秒のタプルとして返す
