@@ -71,6 +71,8 @@ class TransportStreamFile(BufferedReader):
         except IndexError:
             raise StopIteration
 
+    tables = sections
+
     def get_caption_pid(self):
         """字幕パケットの PID を返す
 
