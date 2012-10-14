@@ -202,8 +202,7 @@ class fixed_count_loop(mnemonic):
         return self.count
 
     def real_length(self, instance):
-        return sum(len(object) for object in
-                   self.__get__(instance, instance.__class__))
+        return sum(map(len, self.__get__(instance, instance.__class__)))
 
 class case_table(fixed_count_loop):
 
