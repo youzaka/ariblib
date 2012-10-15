@@ -4,7 +4,7 @@
 
 from collections import defaultdict
 
-from ariblib.mnemonics import (aribstr, bslbf, case, char, loop, mnemonic,
+from ariblib.mnemonics import (aribstr, bslbf, case, char, loop, mjd, mnemonic,
                                raw, times, uimsbf)
 from ariblib.syntax import Syntax
 
@@ -520,7 +520,7 @@ class SIParameterDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     parameter_version = uimsbf(8)
-    update_time = uimsbf(16)
+    update_time = mjd(16)
 
     @loop(lambda self: self.descriptor_length - 3)
     class parameters(Syntax):
@@ -530,7 +530,6 @@ class SIParameterDescriptor(Descriptor):
         @loop(lambda self: self.table_description_length)
         class descriptions(Syntax):
             table_description_byte = uimsbf(8)
-
 
 class ContentAvailabilityDescriptor(Descriptor):
 
