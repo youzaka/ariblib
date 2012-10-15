@@ -86,7 +86,7 @@ class mjd(mnemonic):
     def __get__(self, instance, owner):
         start = self.start(instance)
         block = start // 8
-        last = block + 5
+        last = block + self.real_length(instance) // 8
         pmjd = instance._packet[block:last]
         return datetime(*mjd2datetime(pmjd))
 
@@ -243,8 +243,12 @@ def mjd2datetime(pmjd):
     """mjdを年月日時分秒のタプルとして返す
     ARIB-STD-B10第2部付録Cの通りに実装"""
 
+    print(' '.join(map(lambda s: format(s, '02X'), pmjd)))
     mjd = (pmjd[0] << 8) | pmjd[1]
-    bcd = pmjd[2:]
+    if len(pmjd) > 2:
+        bcd = pmjd[2:]
+    else:
+        bcd = [0, 0, 0]
     yy_ = int((mjd - 15078.2) / 365.25)
     mm_ = int((mjd - 14956.1 - int(yy_ * 365.25)) / 30.6001)
     k = 1 if 14 <= mm_ <= 15 else 0
