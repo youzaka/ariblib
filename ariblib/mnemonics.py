@@ -235,19 +235,18 @@ class case_table(fixed_count_loop):
     def real_count(self, instance):
         return 1
 
-def bin_dump(target):
+def bindump(target):
     """バイナリダンプ"""
-    return ' '.join(map(lambda x: format(x, '08b'), binary))
+    return ' '.join(map(lambda x: format(x, '08b'), target))
 
-def hex_dump(target):
+def hexdump(target):
     """16進ダンプ"""
-    return ' '.join(map(lambda x: format(x, '02X'), binary))
+    return ' '.join(map(lambda x: format(x, '02X'), target))
 
 def mjd2datetime(pmjd):
     """mjdを年月日時分秒のタプルとして返す
     ARIB-STD-B10第2部付録Cの通りに実装"""
 
-    print(' '.join(map(lambda s: format(s, '02X'), pmjd)))
     mjd = (pmjd[0] << 8) | pmjd[1]
     if len(pmjd) > 2:
         bcd = pmjd[2:]
