@@ -5,6 +5,7 @@ from ariblib.sections import *
 Table = Section
 ProgramAssociationTable = ProgramAssociationSection
 ProgramMapTable = ProgramMapSection
+ConditionalAccessTable = ConditionalAccessSection
 NetworkInformationTable = NetworkInformationSection
 ServiceDescriptionTable = ServiceDescriptionSection
 BouquetAssociationTable = BouquetAssociationSection

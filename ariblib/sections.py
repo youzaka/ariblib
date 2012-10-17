@@ -138,6 +138,26 @@ class ProgramMapSection(Section):
             if stream.stream_type in audio_types:
                 yield stream.elementary_PID
 
+class ConditionalAccessSection(Section):
+
+    """限定受信セクション CAT (ISO 13818-1 2.4.4.6)"""
+
+    _pids = [0x01]
+    _table_ids = [0x01]
+
+    table_id = uimsbf(8)
+    section_syntax_indicator = bslbf(1)
+    reserved_future_use = bslbf(1)
+    reserved_1 = bslbf(2)
+    section_length = uimsbf(12)
+    reserved_2 = bslbf(18)
+    version_number = uimsbf(5)
+    current_next_indicator = bslbf(1)
+    section_number = uimsbf(8)
+    last_section_number = uimsbf(8)
+    descriptors = descriptors(lambda self: self.section_length - 9)
+    CRC_32 = rpchof(32)
+
 class NetworkInformationSection(Section):
 
     """ネットワーク情報セクション NIT (ARIB-STD-B10-2-5.2.4)"""
