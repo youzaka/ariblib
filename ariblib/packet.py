@@ -68,6 +68,13 @@ class TransportStreamFile(BufferedReader):
                     continue
                 else:
                     buffer.extend(current)
+
+            # 残ったバッファを片付ける
+            for buffer in buf.values():
+                if buffer[0] in Section._table_ids:
+                    section = Section(buffer)
+                    if section.section_length <= len(section) + 3:
+                        yield section
         except IndexError:
             raise StopIteration
 
