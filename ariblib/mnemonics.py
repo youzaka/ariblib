@@ -88,6 +88,8 @@ class mjd(mnemonic):
         block = start // 8
         last = block + self.real_length(instance) // 8
         pmjd = instance._packet[block:last]
+        if pmjd == bytearray(b'\xff\xff\xff\xff\xff'):
+            return None
         return datetime(*mjd2datetime(pmjd))
 
 class bcd(mnemonic):
@@ -99,6 +101,8 @@ class bcd(mnemonic):
         block = start // 8
         last = block + 3
         bcd = instance._packet[block:last]
+        if bcd == bytearray(b'\xff\xff\xff'):
+            return None
         hour, minute, second = bcd2time(bcd)
         return timedelta(hours=hour, minutes=minute, seconds=second)
 
