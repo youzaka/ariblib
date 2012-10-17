@@ -229,7 +229,7 @@ class case_table(fixed_count_loop):
 
     def real_length(self, instance):
         if self.condition(instance):
-            return fixed_count_loop.real_length(self, instance)
+            return mnemonic.real_length(self, instance)
         return 0
 
     def real_count(self, instance):
