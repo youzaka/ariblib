@@ -5,6 +5,7 @@
 """
 
 from datetime import datetime, timedelta
+from functools import reduce
 
 from ariblib.aribstr import AribString
 
@@ -94,6 +95,23 @@ class mjd(mnemonic):
 
 class bcd(mnemonic):
 
+    """二進化十進数で表現された数値"""
+
+    def __init__(self, length, decimal_point=0):
+        self.decimal_point = decimal_point
+        mnemonic.__init__(self, length)
+
+    def __get__(self, instance, owner):
+        start = self.start(instance)
+        block = start // 8
+        last = block + self.real_length(instance) // 8
+        pbcd = instance._packet[block:last]
+        int_values = map(bcd2int, pbcd)
+        value = reduce(lambda x, y: x * 100 + y, int_values)
+        return value / (10 ** self.decimal_point)
+
+class bcdtime(mnemonic):
+
     """二進化十進数で表現された時分秒"""
 
     def __get__(self, instance, owner):
@@ -103,7 +121,7 @@ class bcd(mnemonic):
         bcd = instance._packet[block:last]
         if bcd == bytearray(b'\xff\xff\xff'):
             return None
-        hour, minute, second = bcd2time(bcd)
+        hour, minute, second = map(bcd2int, bcd)
         return timedelta(hours=hour, minutes=minute, seconds=second)
 
 class otm(mnemonic):
@@ -118,7 +136,7 @@ class otm(mnemonic):
         msec = map(ord, instance._packet[last:])
         millisecond = ((msec[0] & 0xF0) >> 4) * 100 + (
                        (msec[0] & 0x0F) * 10) + ((msec[1] & 0x0F) >> 4)
-        hour, minute, second = bcd2time(bcd)
+        hour, minute, second = map(bcd2int, bcd)
         return timedelta(hours=hour, minutes=minute, seconds=second,
                          microseconds=millisecond)
 
@@ -258,15 +276,12 @@ def mjd2datetime(pmjd):
     day = mjd - 14956 - int(yy_ * 365.25) - int(mm_ * 30.6001)
     year = 1900 + yy_ + k
     month = mm_ - 1 - k * 12
-    return (year, month, day) + bcd2time(bcd)
+    return (year, month, day) + tuple(map(bcd2int, bcd))
 
-def bcd2time(bcd):
-    """bcdを時分秒のタプルとして返す"""
+def bcd2int(bcd):
+    """bcdを10進数にする"""
 
-    hour = (((bcd[0] & 0xF0) >> 4) * 10 + (bcd[0] & 0x0F))
-    minute = ((bcd[1] & 0xF0) >> 4) * 10 + (bcd[1] & 0x0F)
-    second = ((bcd[2] & 0xF0) >> 4) * 10 + (bcd[2] & 0x0F)
-    return (hour, minute, second)
+    return ((bcd & 0xF0) >> 4) * 10 + (bcd & 0x0F)
 
 def loop(length):
     """サイズ固定のサブシンタックスを返すデコレータ"""

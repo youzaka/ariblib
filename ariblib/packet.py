@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import timedelta
 from io import BufferedReader, FileIO
 
-from ariblib.mnemonics import (bcd, bslbf, case, char, loop, otm, raw, times,
+from ariblib.mnemonics import (bcdtime, bslbf, case, char, loop, otm, raw, times,
                                uimsbf)
 from ariblib.syntax import Syntax
 from ariblib.sections import Section
@@ -328,7 +328,7 @@ class SynchronizedPacketizedElementaryStream(Section):
 
         @case(lambda self: self.TMD in (0b01, 0b10))
         class with_STM(Syntax):
-            STM = bcd(40)
+            STM = bcdtime(40)
 
         data_unit_loop_length = uimsbf(24)
 

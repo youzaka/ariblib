@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from ariblib.aribstr import AribString
 from ariblib.descriptors import descriptors
-from ariblib.mnemonics import bcd, bslbf, loop, rpchof, mjd, uimsbf
+from ariblib.mnemonics import bcdtime, bslbf, loop, rpchof, mjd, uimsbf
 from ariblib.syntax import Syntax
 
 class Section(Syntax):
@@ -288,7 +288,7 @@ class EventInformationSection(Section):
     class events(Syntax):
         event_id = uimsbf(16)
         start_time = mjd(40)
-        duration = bcd(24)
+        duration = bcdtime(24)
         running_status = uimsbf(3)
         free_CA_mode = bslbf(1)
         descriptors_loop_length = uimsbf(12)
