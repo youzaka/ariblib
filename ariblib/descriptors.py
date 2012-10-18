@@ -4,7 +4,7 @@
 
 from collections import defaultdict
 
-from ariblib.mnemonics import (aribstr, bslbf, case, char, loop, mjd, mnemonic,
+from ariblib.mnemonics import (aribstr, bcd, bslbf, case, char, loop, mjd, mnemonic,
                                raw, times, uimsbf)
 from ariblib.syntax import Syntax
 
@@ -88,6 +88,32 @@ class ServiceListDescriptor(Descriptor):
         service_id = uimsbf(16)
         service_type = uimsbf(8)
 
+class SatelliteDeliverySystemDescriptor(Descriptor):
+
+    """衛星分配システム記述子(ARIB-STD-B10-2-6.2.6)"""
+
+    _tag = 0x43
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    frequency = bcd(32, 6)
+    orbital_position = bcd(16, 1)
+    west_east_flag = bslbf(1)
+    polarisation = bslbf(2)
+    modulaton = bslbf(5)
+    symbol_rate = bcd(28, 5)
+    FEC_inner = bslbf(4)
+
+class BouquetNameDescriptor(Descriptor):
+
+    """ブーケ名記述子(ARIB-STD-B10-2.6.2.1)"""
+
+    _tag = 0x47
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    char = aribstr(descriptor_length)
+
 class ServiceDescriptor(Descriptor):
 
     """サービス記述子(ARIB-STD-B10-2-6.2.13)"""
@@ -102,6 +128,21 @@ class ServiceDescriptor(Descriptor):
     service_name_length = uimsbf(8)
     service_name = aribstr(service_name_length)
 
+class CountryAvailabilityDescriptor(Descriptor):
+
+    """国別受信可否記述子(ARIB-STD-B10-2.6.2.5)"""
+
+    _tag = 0x49
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    country_availability_flag = bslbf(1)
+    reserved_future_use = bslbf(7)
+
+    @loop(lambda self: self.descriptor_length - 1)
+    class countries(Syntax):
+        country_code = char(24)
+
 class LinkageDescriptor(Descriptor):
 
     """リンク記述子(ARIB-STD-B10-2.6.2.8)"""
@@ -114,7 +155,28 @@ class LinkageDescriptor(Descriptor):
     original_network_id = uimsbf(16)
     service_id = uimsbf(16)
     linkage_type = uimsbf(8)
-    private_data_byte = bslbf(lambda self: self.descriptor_length - 7)
+
+    @case(lambda self: self.linkage_type == 0x0B)
+    class linkage_type_0x0B(Syntax):
+        platform_id_data_length = uimsbf(8)
+
+        @loop(platform_id_data_length)
+        class platforms(Syntax):
+            platform_id = uimsbf(24)
+            platform_name_loop_length = uimsbf(8)
+
+            @loop(platform_name_loop_length)
+            class names(Syntax):
+                ISO_639_language_code = char(24)
+                platform_name_length = uimsbf(8)
+                text_char = aribstr(platform_name_length)
+
+    private_data_byte = bslbf(lambda self: self.descriptor_length -
+        (self.platform_id_data_length + 1))
+
+    @case(lambda self: self.linkage_type != 0x0B)
+    class default(Syntax):
+        private_data_byte = bslbf(lambda self: self.descriptor_length - 7)
 
 class ShortEventDescriptor(Descriptor):
 
@@ -683,11 +745,11 @@ tags = {
     0x40: NetworkNameDescriptor,
     0x41: ServiceListDescriptor,
     #0x42: スタッフ記述子,
-    #0x43: 衛星分配システム記述子,
+    0x43: SatelliteDeliverySystemDescriptor,
     #0x44: 優先分配システム記述子,
-    #0x47: ブーケ名記述子,
+    0x47: BouquetNameDescriptor,
     0x48: ServiceDescriptor,
-    #0x49: 国別受信可否記述子,
+    0x49: CountryAvailabilityDescriptor,
     0x4A: LinkageDescriptor,
     #0x4B: NVOD基準サービス記述子,
     #0x4C: タイムシフトサービス記述子,
