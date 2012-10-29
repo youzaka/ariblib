@@ -28,7 +28,7 @@ class mnemonic(object):
     def real_length(self, instance):
         """ビット列の実際の長さを求める"""
 
-        if isinstance(instance, int):
+        if isinstance(self.length, int):
             return self.length
 
         if self.length is None:
@@ -213,7 +213,7 @@ class fixed_count_loop(mnemonic):
             start += len(obj) // 8
 
     def real_count(self, instance):
-        if isinstance(instance, int):
+        if isinstance(self.count, int):
             return self.count
         if isinstance(self.count, mnemonic):
             return self.count.__get__(instance, instance.__class__)
@@ -226,18 +226,19 @@ class fixed_count_loop(mnemonic):
     def real_length(self, instance):
         return sum(map(len, self.__get__(instance, instance.__class__)))
 
-class case_table(fixed_count_loop):
+class case_table(mnemonic):
 
     """if"""
 
     def __init__(self, cls, condition):
         self.cls = cls
+        self.count = 1
         if isinstance(condition, mnemonic):
             self.condition = lambda instance: condition.__get__(instance, instance.__class__)
         else:
             self.condition = condition
 
-        fixed_count_loop.__init__(self, cls, 1)
+        mnemonic.__init__(self, None)
 
     def __get__(self, instance, owner):
         if self.condition(instance):
@@ -247,11 +248,9 @@ class case_table(fixed_count_loop):
 
     def real_length(self, instance):
         if self.condition(instance):
-            return mnemonic.real_length(self, instance)
+            return sum(mnemonic.real_length(instance)
+                       for mnemonic in self.cls._mnemonics)
         return 0
-
-    def real_count(self, instance):
-        return 1
 
 def bindump(target):
     """バイナリダンプ"""

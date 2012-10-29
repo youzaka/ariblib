@@ -3,7 +3,11 @@
 """字幕処理関係"""
 
 from ariblib.aribgaiji import GAIJI_MAP
+from ariblib.packet import SynchronizedPacketizedElementaryStream
+from ariblib.sections import TimeOffsetSection
 
+from PIL import Image
+from PIL.ImageDraw import Draw
 
 class CProfileString(object):
     """CProfile文字列"""
@@ -49,8 +53,8 @@ class CProfileString(object):
                         yield GAIJI_MAP[char1]
                     except KeyError:
                         yield '(0x{:x})'.format(char1)
-            #elif options.drcs and 0x20 < char1 < 0x2f:
-            #    yield str(self.drcs.get(char1, '(0x{:x})'.format(char1)))
+            elif 0x20 < char1 < 0x2f:
+                yield str(self.drcs.get(char1, '(0x{:x})'.format(char1)))
             elif char1 in self.mapping:
                 yield self.mapping[char1]
 

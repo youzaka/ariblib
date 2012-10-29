@@ -316,8 +316,34 @@ class SynchronizedPacketizedElementaryStream(Section):
         class data_units(Syntax):
             unit_separator = uimsbf(8)
             data_unit_parameter = uimsbf(8)
-            data_unit_size = uimsbf(24)
-            data_unit_data = raw(data_unit_size)
+
+            @case(lambda self: self.data_unit_parameter == 0x20)
+            class CProfileString(Syntax):
+                data_unit_size = uimsbf(24)
+                data_unit_data = raw(data_unit_size)
+
+            @case(lambda self: self.data_unit_parameter == 0x30)
+            class DRCSString(Syntax):
+                """ARIB-STD-B24-1-2-D 表D-1 DRCS_data_structure
+                FIXME: 回数固定ループの3重以上の入れ子を正常に処理できないので、
+                number_of_fontは1固定, widthは16固定, heightは18固定が前提の簡易実装である"""
+                data_unit_size = uimsbf(24)
+                number_of_code = uimsbf(8)
+
+                @times(lambda self: self.number_of_code)
+                class codes(Syntax):
+                    character_code = uimsbf(16)
+                    number_of_font = uimsbf(8)
+
+                    font_id = uimsbf(4)
+                    mode = bslbf(4)
+                    depth = uimsbf(8)
+                    width = uimsbf(8)
+                    height = uimsbf(8)
+
+                    @times(18)
+                    class patterns(Syntax):
+                        pattern_data = uimsbf(16)
 
     @case(lambda self: self.data_group_id not in (0x0, 0x20))
     class without_languages(Syntax):
@@ -336,8 +362,34 @@ class SynchronizedPacketizedElementaryStream(Section):
         class data_units(Syntax):
             unit_separator = uimsbf(8)
             data_unit_parameter = uimsbf(8)
-            data_unit_size = uimsbf(24)
-            data_unit_data = raw(data_unit_size)
+
+            @case(lambda self: self.data_unit_parameter == 0x20)
+            class CProfileString(Syntax):
+                data_unit_size = uimsbf(24)
+                data_unit_data = raw(data_unit_size)
+
+            @case(lambda self: self.data_unit_parameter == 0x30)
+            class DRCSString(Syntax):
+                """ARIB-STD-B24-1-2-D 表D-1 DRCS_data_structure
+                FIXME: 回数固定ループの3重以上の入れ子を正常に処理できないので、
+                number_of_fontは1固定, widthは16固定, heightは18固定が前提の簡易実装である"""
+                data_unit_size = uimsbf(24)
+                number_of_code = uimsbf(8)
+
+                @times(lambda self: self.number_of_code)
+                class codes(Syntax):
+                    character_code = uimsbf(16)
+                    number_of_font = uimsbf(8)
+
+                    font_id = uimsbf(4)
+                    mode = bslbf(4)
+                    depth = uimsbf(8)
+                    width = uimsbf(8)
+                    height = uimsbf(8)
+
+                    @times(18)
+                    class patterns(Syntax):
+                        pattern_data = uimsbf(16)
 
     @property
     def pts(self):
