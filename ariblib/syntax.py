@@ -24,11 +24,16 @@ class SyntaxDict(dict):
 
         if isinstance(value, mnemonic):
             value.name = key
-            mnemonics = self.mnemonics[:]
-            value.start = lambda instance: sum(mnemonic.real_length(instance)
-                                               for mnemonic in mnemonics)
+            value.start = self.get_start()
             self.mnemonics.append(value)
+
         dict.__setitem__(self, key, value)
+
+    def get_start(self):
+        mnemonics = self.mnemonics[:]
+        def start(instance):
+            return sum(m.real_length(instance) for m in mnemonics) + instance._pos
+        return start
 
 class SyntaxType(type):
 
@@ -52,8 +57,9 @@ class Syntax(metaclass=SyntaxType):
 
     """シンタックスの親クラス"""
 
-    def __init__(self, packet):
+    def __init__(self, packet, pos=0):
         self._packet = packet
+        self._pos = pos
 
     def __len__(self):
         """このシンタックスが持っているビット列表記の長さを全て数え上げ、

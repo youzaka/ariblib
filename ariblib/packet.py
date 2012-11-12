@@ -31,9 +31,14 @@ class TransportStreamFile(BufferedReader):
         chunk_size = self.chunk_size
         buffer_size = packet_size * chunk_size
         packets = iter(lambda: self.read(buffer_size), b'')
-        return (packet[start:stop] for packet in packets
+        for packet in packets:
             for start, stop in zip(range(0, buffer_size - packet_size + 1, packet_size),
-                                   range(packet_size, buffer_size + 1, packet_size)))
+                                   range(packet_size, buffer_size + 1, packet_size)):
+                next = packet[start:stop]
+                if not next:
+                    raise StopIteration
+                yield next
+
     def __next__(self):
         return self.read(self.PACKET_SIZE)
 
@@ -42,41 +47,40 @@ class TransportStreamFile(BufferedReader):
 
         buf = defaultdict(bytearray)
 
-        try:
-            pids = Section._pids
-            for packet in self:
-                PID = pid(packet)
-                if PID not in pids:
-                    continue
+        pids = Section._pids
+        table_ids = Section._table_ids
 
-                buffer = buf[PID]
-                prev, current = payload(packet)
-                if payload_unit_start_indicator(packet):
-                    if buffer:
-                        buffer.extend(prev)
-                    while buffer and buffer[0] != 0xFF:
-                        section = Section(buffer[:])
-                        if buffer[0] in Section._table_ids:
-                            yield section
-                        try:
-                            next_start = section.section_length + 3
-                            buffer[:] = buffer[next_start:]
-                        except (IndexError, AttributeError):
-                            break
-                    buffer[:] = current
-                elif not buffer:
-                    continue
-                else:
-                    buffer.extend(current)
+        for packet in self:
+            PID = pid(packet)
+            if PID not in pids:
+                continue
 
-            # 残ったバッファを片付ける
-            for buffer in buf.values():
-                if buffer[0] in Section._table_ids:
-                    section = Section(buffer)
-                    if section.section_length <= len(section) + 3:
+            buffer = buf[PID]
+            prev, current = payload(packet)
+            if payload_unit_start_indicator(packet):
+                if buffer:
+                    buffer.extend(prev)
+                while buffer and buffer[0] != 0xFF:
+                    section = Section(buffer[:])
+                    if buffer[0] in table_ids:
                         yield section
-        except IndexError:
-            raise StopIteration
+                    try:
+                        next_start = section.section_length + 3
+                        buffer[:] = buffer[next_start:]
+                    except (IndexError, AttributeError):
+                        break
+                buffer[:] = current
+            elif not buffer:
+                continue
+            else:
+                buffer.extend(current)
+
+        # 残ったバッファを片付ける
+        for buffer in buf.values():
+            if buffer[0] in table_ids:
+                section = Section(buffer)
+                if section.isfull():
+                    yield section
 
     tables = sections
 
@@ -125,6 +129,10 @@ class TransportStreamFile(BufferedReader):
                        (packet[8] << 9) | (packet[9] << 1) |
                        ((packet[10] & 0x80) >> 7))
                 yield timedelta(seconds=pcr/90000)
+
+def tsopen(path, chunk=10000):
+    """TransportStreamFileオブジェクトを返すラッパー関数"""
+    return TransportStreamFile(path, chunk)
 
 def transport_error_indicator(packet):
     """パケットの transport_error_indocator を返す"""
@@ -310,41 +318,6 @@ class SynchronizedPacketizedElementaryStream(Section):
             TCS = bslbf(2)
             rollup_mode = bslbf(2)
 
-        data_unit_loop_length = uimsbf(24)
-
-        @loop(data_unit_loop_length)
-        class data_units(Syntax):
-            unit_separator = uimsbf(8)
-            data_unit_parameter = uimsbf(8)
-
-            @case(lambda self: self.data_unit_parameter == 0x20)
-            class CProfileString(Syntax):
-                data_unit_size = uimsbf(24)
-                data_unit_data = raw(data_unit_size)
-
-            @case(lambda self: self.data_unit_parameter == 0x30)
-            class DRCSString(Syntax):
-                """ARIB-STD-B24-1-2-D 表D-1 DRCS_data_structure
-                FIXME: 回数固定ループの3重以上の入れ子を正常に処理できないので、
-                number_of_fontは1固定, widthは16固定, heightは18固定が前提の簡易実装である"""
-                data_unit_size = uimsbf(24)
-                number_of_code = uimsbf(8)
-
-                @times(lambda self: self.number_of_code)
-                class codes(Syntax):
-                    character_code = uimsbf(16)
-                    number_of_font = uimsbf(8)
-
-                    font_id = uimsbf(4)
-                    mode = bslbf(4)
-                    depth = uimsbf(8)
-                    width = uimsbf(8)
-                    height = uimsbf(8)
-
-                    @times(18)
-                    class patterns(Syntax):
-                        pattern_data = uimsbf(16)
-
     @case(lambda self: self.data_group_id not in (0x0, 0x20))
     class without_languages(Syntax):
         """ARIB-STD-B24-1-3-9.3.2 表9-10 字幕文データ"""
@@ -356,38 +329,41 @@ class SynchronizedPacketizedElementaryStream(Section):
         class with_STM(Syntax):
             STM = bcdtime(40)
 
-        data_unit_loop_length = uimsbf(24)
+    data_unit_loop_length = uimsbf(24)
 
-        @loop(data_unit_loop_length)
-        class data_units(Syntax):
-            unit_separator = uimsbf(8)
-            data_unit_parameter = uimsbf(8)
+    @loop(data_unit_loop_length)
+    class data_units(Syntax):
+        unit_separator = uimsbf(8)
+        data_unit_parameter = uimsbf(8)
 
-            @case(lambda self: self.data_unit_parameter == 0x20)
-            class CProfileString(Syntax):
-                data_unit_size = uimsbf(24)
-                data_unit_data = raw(data_unit_size)
+        @case(lambda self: self.data_unit_parameter == 0x20)
+        class CProfileString(Syntax):
+            data_unit_size = uimsbf(24)
+            data_unit_data = raw(data_unit_size)
 
-            @case(lambda self: self.data_unit_parameter == 0x30)
-            class DRCSString(Syntax):
-                """ARIB-STD-B24-1-2-D 表D-1 DRCS_data_structure
-                FIXME: 回数固定ループの3重以上の入れ子を正常に処理できないので、
-                number_of_fontは1固定, widthは16固定, heightは18固定が前提の簡易実装である"""
-                data_unit_size = uimsbf(24)
-                number_of_code = uimsbf(8)
+        @case(lambda self: self.data_unit_parameter == 0x30)
+        class DRCSString(Syntax):
+            """ARIB-STD-B24-1-2-D 表D-1 DRCS_data_structure
 
-                @times(lambda self: self.number_of_code)
-                class codes(Syntax):
-                    character_code = uimsbf(16)
-                    number_of_font = uimsbf(8)
+            FIXME: width が16固定"""
 
+            data_unit_size = uimsbf(24)
+            number_of_code = uimsbf(8)
+
+            @times(number_of_code)
+            class codes(Syntax):
+                character_code = uimsbf(16)
+                number_of_font = uimsbf(8)
+
+                @times(number_of_font)
+                class fonts(Syntax):
                     font_id = uimsbf(4)
                     mode = bslbf(4)
                     depth = uimsbf(8)
                     width = uimsbf(8)
                     height = uimsbf(8)
 
-                    @times(18)
+                    @times(height)
                     class patterns(Syntax):
                         pattern_data = uimsbf(16)
 
@@ -397,6 +373,12 @@ class SynchronizedPacketizedElementaryStream(Section):
         pts_hz = 90000
         second = pts / pts_hz
         return timedelta(seconds=second)
+
+    def isfull(self):
+        """section_length などで指定された分以上の
+        パケットを持っているかどうかを返す"""
+
+        return self.PES_packet_length <= len(self) + 3
 
 def raw_dump(packet):
     return ' '.join(map(lambda s: format(s, '02X'), packet))

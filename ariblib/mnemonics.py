@@ -32,11 +32,10 @@ class mnemonic(object):
             return self.length
 
         if self.length is None:
-            self.length = sum(mnemonic.real_length(instance)
-                              for mnemonic in self.cls._mnemonics)
-            return self.length
+            return sum(mnemonic.real_length(instance)
+                       for mnemonic in self.cls._mnemonics)
         if isinstance(self.length, mnemonic):
-            return self.length.__get__(instance, instance.__class__) * 8
+            return getattr(instance, self.length.name) * 8
         if callable(self.length):
             return self.length(instance) * 8
         if isinstance(self.length, str):
@@ -191,10 +190,13 @@ class fixed_size_loop(mnemonic):
         length = self.real_length(instance) // 8
         start = self.start(instance) // 8
         end = start + length
+        result = []
         while start < end:
-            obj = self.cls(instance._packet[start:end])
-            yield obj
+            start_pos = start * 8
+            obj = self.cls(instance._packet, pos=start_pos)
+            result.append(obj)
             start += len(obj) // 8
+        return result
 
 class fixed_count_loop(mnemonic):
 
@@ -207,16 +209,19 @@ class fixed_count_loop(mnemonic):
 
     def __get__(self, instance, owner):
         start = self.start(instance) // 8
+        result = []
         for _ in range(self.real_count(instance)):
-            obj = self.cls(instance._packet[start:])
-            yield obj
+            start_pos = start * 8
+            obj = self.cls(instance._packet, pos=start_pos)
+            result.append(obj)
             start += len(obj) // 8
+        return result
 
     def real_count(self, instance):
         if isinstance(self.count, int):
             return self.count
         if isinstance(self.count, mnemonic):
-            return self.count.__get__(instance, instance.__class__)
+            return getattr(instance, self.count.name)
         if callable(self.count):
             return self.count(instance)
         if isinstance(self.count, str):
@@ -224,7 +229,9 @@ class fixed_count_loop(mnemonic):
         return self.count
 
     def real_length(self, instance):
-        return sum(map(len, self.__get__(instance, instance.__class__)))
+        return sum(mnemonic.real_length(sub)
+                   for sub in getattr(instance, self.name)
+                       for mnemonic in sub._mnemonics)
 
 class case_table(mnemonic):
 
@@ -242,8 +249,8 @@ class case_table(mnemonic):
 
     def __get__(self, instance, owner):
         if self.condition(instance):
-            start = self.start(instance) // 8
-            return self.cls(instance._packet[start:])
+            start_pos = self.start(instance)
+            return self.cls(instance._packet, pos=start_pos)
         return None
 
     def real_length(self, instance):
