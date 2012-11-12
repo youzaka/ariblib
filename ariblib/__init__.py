@@ -2,5 +2,5 @@
 
 __version__ = '0.0.4'
 
-from ariblib.packet import TransportStreamFile
+from ariblib.packet import TransportStreamFile, tsopen
 

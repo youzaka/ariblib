@@ -29,6 +29,12 @@ class Section(Syntax):
         raise AttributeError("'{}' object has no attribute '{}'".format(
             self.__class__.__name__, name))
 
+    def isfull(self):
+        """section_length などで指定された分以上の
+        パケットを持っているかどうかを返す"""
+
+        return self.section_length <= len(self) + 3
+
 class ProgramAssociationSection(Section):
 
     """Program Association Section PAT (ISO 13818-1 2.4.4.3)"""
