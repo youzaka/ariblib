@@ -4,6 +4,10 @@ ariblib
 速度優先の Transport Stream パーサです。
 Python 3.2 での動作が前提ですが、3.1 でも動くかもしれません。
 
+```
+$ sudo python3.2 setup.py install
+```
+
 ARIB-STD で定義されているデータ構造をなるべく近い形で
 Python コードとして記述できるようにしています。
 
@@ -81,26 +85,21 @@ class ProgramMapSection(Section):
 使い方例1 字幕を表示
 ```python
 
+from ariblib import tsopen
+from ariblib.caption import captions
+
 import sys
 
-from ariblib import TransportStreamFile
-from ariblib.caption import CProfileString
-from ariblib.packet import SynchronizedPacketizedElementaryStream
-from ariblib.sections import TimeOffsetSection
+with tsopen(sys.argv[1]) as ts:
+    for caption in captions(ts, color=True):
+        body = str(caption.body)
 
-with TransportStreamFile(sys.argv[1]) as ts:
-    SynchronizedPacketizedElementaryStream._pids = [ts.get_caption_pid()]
-
-    # アダプテーションフィールドの PCR の値と、そこから一番近い TOT テーブルの値から、
-    # 字幕の表示された時刻を計算します (若干誤差が出ます)
-    # PCR が一周した場合の処理は実装されていません
-    base_pcr = next(ts.pcrs())
-    base_time = next(ts.sections(TimeOffsetSection)).JST_time
-
-    for spes in ts.sections(SynchronizedPacketizedElementaryStream):
-        caption_date = base_time + (spes.pts - base_pcr)
-        for data in spes.data_units:
-            print(caption_date, CProfileString(data.data_unit_data))
+        # アダプテーションフィールドの PCR の値と、そこから一番近い TOT テーブルの値から、
+        # 字幕の表示された時刻を計算します (若干誤差が出ます)
+        # PCR が一周した場合の処理は実装されていません
+        datetime = caption.datetime.strftime('%Y-%m-%d %H:%M:%S')
+        print('\033[35m' + datetime + '\33[37m')
+        print(body)
 ```
 
 使い方例2 いま放送中の番組と次の番組を表示
@@ -169,66 +168,20 @@ with TransportStreamFile(sys.argv[1]) as ts:
 
 使い方例5: EPG情報の表示
 ```python
+from ariblib import tsopen
+from ariblib.event import events
 
 import sys
 
-from ariblib import TransportStreamFile
-from ariblib.aribstr import AribString
-from ariblib.constants import *
-from ariblib.descriptors import *
-from ariblib.sections import EventInformationSection
+with tsopen(sys.argv[1]) as ts:
+    for event in events(ts):
+        max_len = max(map(len, event.__dict__.keys()))
+        template = "{:%ds}  {}" % max_len
+        for key, value in event.__dict__.items():
+            print(template.format(key, value))
+        print('-' * 80)
 
-with TransportStreamFile(sys.argv[1]) as ts:
-    # 表示対象を「自ストリーム、スケジュール」とする
-    EventInformationSection._table_ids = range(0x50, 0x60)
-    for eit in ts.sections(EventInformationSection):
-        for event in eit.events:
-            print('service_id', eit.service_id)
-            print('event_id:', event.event_id)
-            print('start:', event.start_time)
-            print('duration:', event.duration)
-
-            desc = event.descriptors
-            for sed in desc.get(ShortEventDescriptor, []):
-                print('title:', sed.event_name_char)
-                print('description:', sed.text_char)
-            for cd in desc.get(ComponentDescriptor, []):
-                print('video:', COMPONENT_TYPE[cd.stream_content][cd.component_type])
-                print('component_text:', cd.component_text)
-            for dccd in desc.get(DigitalCopyControlDescriptor, []):
-                print('copy:', DIGITAL_RECORDING_CONTROL_TYPE[dccd.copy_control_type])
-            for acd in desc.get(AudioComponentDescriptor, []):
-                if acd.main_component_flag:
-                    print('audio:', COMPONENT_TYPE[acd.stream_content][acd.component_type])
-                    print('sampling_rate:', SAMPLING_RATE[acd.sampling_rate])
-                    print('audio_text:', acd.audio_text)
-                else:
-                    print('second_audio:', COMPONENT_TYPE[acd.stream_content][acd.component_type])
-                    print('second_sampling_rate:', SAMPLING_RATE[acd.sampling_rate])
-                    print('second_audio_text:', acd.audio_text)
-            for egd in desc.get(EventGroupDescriptor, []):
-                print('group_type:', EVENT_GROUP_TYPE[egd.group_type])
-                print('events:', ', '.join('{}={}'.format(e.service_id, e.event_id)
-                                           for e in egd.events))
-            for ctd in desc.get(ContentDescriptor, []):
-                nibble = next(ctd.nibbles)
-                print('genre1:', CONTENT_TYPE[nibble.content_nibble_level_1][0])
-                print('genre2:', CONTENT_TYPE[nibble.content_nibble_level_1][1]
-                                             [nibble.content_nibble_level_2])
-            detail = [('', [])]
-            for eed in desc.get(ExtendedEventDescriptor, []):
-                for item in eed.items:
-                    key = item.item_description_char
-                    # タイトルが空か一つ前と同じ場合は本文を一つ前のものにつなげる
-                    if str(key) == '' or str(detail[-1][0]) == str(key):
-                        detail[-1][1].append(item.item_char)
-                    else:
-                        detail.append((key, [item.item_char]))
-            for key, value in detail[1:]:
-                print('{}: {}'.format(key, ''.join(map(lambda s: str(s).strip(), value))))
-            print('=' * 80)
 ```
-拡張形式イベント記述子の処理のところがいけてないので、なんとかするつもりです。
 
 使い方例6: 深夜アニメの出力
 ```python

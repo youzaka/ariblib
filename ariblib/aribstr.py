@@ -337,7 +337,7 @@ class AribString:
             self.control.degignate(data)
 
     def __repr__(self):
-        return self.convert_utf()
+        return self.convert_utf().rstrip()
 
 if __name__ == '__main__':
     f = open(sys.argv[1], 'rb')

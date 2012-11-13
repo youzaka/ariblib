@@ -18,5 +18,6 @@ setup(name='ariblib',
       license='MIT',
       description='python implementation of arib-std-b10 and arib-std-b24',
       packages=find_packages(),
+      package_data={'ariblib': ['drcs.tsv']},
 )
 

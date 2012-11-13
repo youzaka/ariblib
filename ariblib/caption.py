@@ -3,11 +3,38 @@
 """字幕処理関係"""
 
 from ariblib.aribgaiji import GAIJI_MAP
+from ariblib.drcs import DRCSImage, mapping
 from ariblib.packet import SynchronizedPacketizedElementaryStream
 from ariblib.sections import TimeOffsetSection
 
-from PIL import Image
-from PIL.ImageDraw import Draw
+def captions(ts, color=False):
+    """トランスポートストリームから字幕オブジェクトを返すジェネレータ"""
+
+    SynchronizedPacketizedElementaryStream._pids = [ts.get_caption_pid()]
+    if color:
+        CProfileString = ColoredCProfileString
+
+    base_pcr = next(ts.pcrs())
+    base_time = next(ts.sections(TimeOffsetSection)).JST_time
+
+    for spes in ts.sections(SynchronizedPacketizedElementaryStream):
+        caption_date = base_time + (spes.pts - base_pcr)
+        for data in spes.data_units:
+            if data.data_unit_parameter == 0x20:
+                yield Caption(caption_date, CProfileString(data.data_unit_data))
+            elif data.data_unit_parameter == 0x30:
+                for code in data.codes:
+                    drcs_code = code.character_code & 0xFF
+                    for font in code.fonts:
+                        image = DRCSImage(font.width, font.height)
+                        image.point(font.patterns)
+                        CProfileString.drcs[drcs_code] = image.hash
+                        image.save()
+
+class Caption(object):
+    def __init__(self, datetime, body):
+        self.datetime = datetime
+        self.body = body
 
 class CProfileString(object):
     """CProfile文字列"""
@@ -20,6 +47,7 @@ class CProfileString(object):
     }
 
     drcs = {}
+    strings = {}
 
     def __init__(self, data):
         self.data = data
@@ -54,7 +82,10 @@ class CProfileString(object):
                     except KeyError:
                         yield '(0x{:x})'.format(char1)
             elif 0x20 < char1 < 0x2f:
-                yield str(self.drcs.get(char1, '(0x{:x})'.format(char1)))
+                if char1 in self.drcs and self.drcs[char1] in mapping:
+                    yield mapping[self.drcs[char1]]
+                else:
+                    yield '{{{{drcs:0x{:02X}:{}}}}}'.format(char1, self.drcs[char1])
             elif char1 in self.mapping:
                 yield self.mapping[char1]
 

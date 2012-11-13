@@ -365,7 +365,7 @@ class SynchronizedPacketizedElementaryStream(Section):
 
                     @times(height)
                     class patterns(Syntax):
-                        pattern_data = uimsbf(16)
+                        pattern_data = raw(16)
 
     @property
     def pts(self):

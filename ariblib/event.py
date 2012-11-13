@@ -79,4 +79,3 @@ class Event(object):
         self.detail = dict(detail)
         self.longdesc = '\n'.join("{}\n{}\n".format(key, value) for key, value in detail)
 
-
