@@ -20,6 +20,7 @@ mapping_path = os.path.join((os.path.split(ariblib.__file__)[0]), 'drcs.tsv')
 user_mapping_path = os.path.expanduser('~/.ariblib/drcs.tsv')
 mapping = {}
 
+# DRCSイメージ保存ディレクトリが存在しない場合は作成する
 if not os.path.isdir(save_dir):
     import os
     os.makedirs(save_dir)
@@ -31,6 +32,8 @@ for path in (mapping_path, user_mapping_path):
             mapping.update(line for line in reader)
 
 class DRCSImage(object):
+
+    """DRCSの画像イメージ"""
 
     def __init__(self, width, height, bgcolor='white'):
         self.image = Image.new('RGB', (width, height), bgcolor)
@@ -56,6 +59,8 @@ class DRCSImage(object):
 
 class DRCSText(object):
 
+    """DRCSのテキストイメージ"""
+
     def __init__(self, width, height, bgcolor='white'):
         self.hash = None
         self.dots = []
@@ -78,8 +83,11 @@ class DRCSText(object):
             out.write('\n'.join(self.dots))
 
 def _to_bit(raw):
+    """bytearrayを0,1のビットを表す文字列に変換する"""
+
     return ''.join(map(lambda s: format(s, '08b'), raw))
 
+# 画像出力ができないときはテキスト出力を行う
 if text_output:
     DRCSImage = DRCSText
 
