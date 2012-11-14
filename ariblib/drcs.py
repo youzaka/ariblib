@@ -26,10 +26,12 @@ if not os.path.isdir(save_dir):
     os.makedirs(save_dir)
 
 for path in (mapping_path, user_mapping_path):
-    if os.path.isfile(path):
+    try:
         with open(path) as f:
             reader = csv.reader(f, delimiter='\t')
             mapping.update(line for line in reader)
+    except IOError:
+        pass
 
 class DRCSImage(object):
 
@@ -39,7 +41,7 @@ class DRCSImage(object):
         self.image = Image.new('RGB', (width, height), bgcolor)
         self.hash = None
 
-    def point(self, patterns):
+    def point(self, patterns, color='black'):
         hasher = md5()
         draw = Draw(self.image)
         for y, pattern in enumerate(patterns):
@@ -47,7 +49,7 @@ class DRCSImage(object):
             hasher.update(pattern_data)
             points = [(x, y) for x, dot in enumerate(_to_bit(pattern_data))
                              if dot == '1']
-            draw.point(points, 'black')
+            draw.point(points, color)
         self.hash = hasher.hexdigest()
 
     def save(self, ext='png', path=None):
@@ -65,7 +67,7 @@ class DRCSText(object):
         self.hash = None
         self.dots = []
 
-    def point(self, patterns):
+    def point(self, patterns, color='black'):
         hasher = md5()
         for pattern in patterns:
             pattern_data = pattern.pattern_data
