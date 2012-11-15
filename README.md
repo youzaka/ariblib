@@ -107,7 +107,7 @@ with tsopen(sys.argv[1]) as ts:
 
 import sys
 
-from ariblib import TransportStreamFile
+from ariblib import tsopen
 from ariblib.descriptors import ShortEventDescriptor
 from ariblib.sections import EventInformationSection
 
@@ -117,7 +117,7 @@ def show_program(eit):
     start = event.start_time
     return "{} {}".format(program_title, start)
 
-with TransportStreamFile(sys.argv[1]) as ts:
+with tsopen(sys.argv[1]) as ts:
     # 自ストリームの現在と次の番組を表示する
     EventInformationSection._table_ids = [0x4E]
     current = next(table for table in ts.sections(EventInformationSection)
@@ -134,12 +134,12 @@ with TransportStreamFile(sys.argv[1]) as ts:
 
 import sys
 
-from ariblib import TransportStreamFile
+from ariblib import tsopen
 from ariblib.constant import SERVICE_TYPES
 from ariblib.descriptors import ServiceDescriptor
 from ariblib.sections import ServiceDescriptionSection
 
-with TransportStreamFile(sys.argv[1]) as ts:
+with tsopen(sys.argv[1]) as ts:
     for sdt in ts.sections(ServiceDescriptionSection):
         for service in sdt.services:
             for sd in service.descriptors[ServiceDescriptor]:
@@ -152,12 +152,12 @@ with TransportStreamFile(sys.argv[1]) as ts:
 
 import sys
 
-from ariblib import TransportStreamFile
+from ariblib import tsopen
 from ariblib.constants import VIDEO_ENCODE_FORMATS
 from ariblib.descriptors import VideoDecodeControlDescriptor
 from ariblib.sections import ProgramAssociationSection, ProgramMapSection
 
-with TransportStreamFile(sys.argv[1]) as ts:
+with tsopen(sys.argv[1]) as ts:
     pat = next(ts.sections(ProgramAssociationSection))
     ProgramMapSection._pids = list(pat.pmt_pids)
     for pmt in ts.sections(ProgramMapSection):
@@ -180,7 +180,6 @@ with tsopen(sys.argv[1]) as ts:
         for key, value in event.__dict__.items():
             print(template.format(key, value))
         print('-' * 80)
-
 ```
 
 使い方例6: 深夜アニメの出力
@@ -188,19 +187,21 @@ with tsopen(sys.argv[1]) as ts:
 
 import sys
 
-from ariblib import TransportStreamFile
+from ariblib import tsopen
 from ariblib.descriptors import ContentDescriptor, ShortEventDescriptor
 from ariblib.sections import EventInformationSection
 
-with TransportStreamFile(sys.argv[1]) as ts:
+with tsopen(sys.argv[1]) as ts:
     EventInformationSection._table_ids = range(0x50, 0x70)
     for eit in ts.sections(EventInformationSection):
         for event in eit.events:
             for genre in event.descriptors.get(ContentDescriptor, []):
-                nibble = next(genre.nibbles)
-                if nibble.content_nibble_level_1 == 0x07 and not (4 < event.start_time.hour < 22):
-                    for sed in event.descriptors.get(ShortEventDescriptor, []):
-                        print(eit.service_id, event.event_id, event.start_time,
-                              event.duration, sed.event_name_char, sed.text_char)
+                nibble = genre.nibbles[0]
+                # ジャンルがアニメでないイベント、アニメであっても放送開始時刻が5時から21時のものを除きます
+                if nibble.content_nibble_level_1 != 0x07 or 4 < event.start_time.hour < 22:
+                    continue
+                for sed in event.descriptors.get(ShortEventDescriptor, []):
+                    print(eit.service_id, event.event_id, event.start_time,
+                          event.duration, sed.event_name_char, sed.text_char)
 ```
 
