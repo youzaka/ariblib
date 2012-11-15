@@ -4,14 +4,15 @@
 
 from collections import defaultdict
 
-from ariblib.mnemonics import (aribstr, bcd, bslbf, case, char, loop, mjd, mnemonic,
-                               raw, times, uimsbf)
+from ariblib.mnemonics import (aribstr, bcd, bslbf, cache, case, char, loop,
+                               mjd, mnemonic, raw, times, uimsbf)
 from ariblib.syntax import Syntax
 
 class descriptors(mnemonic):
 
     """記述子リスト"""
 
+    @cache
     def __get__(self, instance, owner):
         length = self.real_length(instance) // 8
         start = self.start(instance) // 8

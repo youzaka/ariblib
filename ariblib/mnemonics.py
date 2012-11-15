@@ -16,6 +16,30 @@ except NameError:
     def callable(function):
         return function.__class__ is FunctionType
 
+def meta_cache(suffix):
+    """real_length, real_count用のキャッシュデコレータ"""
+
+    def cache(func):
+        def cached(self, instance):
+            cache_name = '_{}_{}'.format(self.name, suffix)
+            caches = instance.__dict__
+            if cache_name in caches:
+                return caches[cache_name]
+            result = func(self, instance)
+            caches[cache_name] = result
+            return result
+        return cached
+    return cache
+
+def cache(func):
+    """ビット列キャッシュデコレータ"""
+
+    def cached(self, instance, owner):
+        result = func(self, instance, owner)
+        setattr(instance, self.name, result)
+        return result
+    return cached
+
 class mnemonic(object):
 
     """ビット列表記の親クラス"""
@@ -25,6 +49,7 @@ class mnemonic(object):
         self.start = lambda instance: 0
         self.name = ''
 
+    @meta_cache('len')
     def real_length(self, instance):
         """ビット列の実際の長さを求める"""
 
@@ -46,6 +71,7 @@ class uimsbf(mnemonic):
 
     """unsigned integer most significant bit first[符号無し整数、最上位ビットが先頭]"""
 
+    @cache
     def __get__(self, instance, owner):
         start = self.start(instance)
         length = self.real_length(instance)
@@ -83,6 +109,7 @@ class mjd(mnemonic):
 
     """Modified Julian Date[修正ユリウス日]"""
 
+    @cache
     def __get__(self, instance, owner):
         start = self.start(instance)
         block = start // 8
@@ -100,6 +127,7 @@ class bcd(mnemonic):
         self.decimal_point = decimal_point
         mnemonic.__init__(self, length)
 
+    @cache
     def __get__(self, instance, owner):
         start = self.start(instance)
         block = start // 8
@@ -113,6 +141,7 @@ class bcdtime(mnemonic):
 
     """二進化十進数で表現された時分秒"""
 
+    @cache
     def __get__(self, instance, owner):
         start = self.start(instance)
         block = start // 8
@@ -127,6 +156,7 @@ class otm(mnemonic):
 
     """オフセット時刻。二進化十進数で表現された時・分・秒・ミリ秒"""
 
+    @cache
     def __get__(self, instance, owner):
         start = self.start(instance)
         block = start // 8
@@ -143,6 +173,7 @@ class aribstr(mnemonic):
 
     """8単位符号で符号化された文字列"""
 
+    @cache
     def __get__(self, instance, owner):
         start = self.start(instance)
         block = start // 8
@@ -154,6 +185,7 @@ class char(mnemonic):
 
     """ISO 8859-1に従って8ビットで符号化された文字列"""
 
+    @cache
     def __get__(self, instance, owner):
         start = self.start(instance)
         block = start // 8
@@ -164,6 +196,7 @@ class cp932(mnemonic):
 
     """CP932文字列"""
 
+    @cache
     def __get__(self, instance, owner):
         start = self.start(instance)
         block = start // 8
@@ -172,6 +205,8 @@ class cp932(mnemonic):
 
 class raw(mnemonic):
     """アレイそのまま"""
+
+    @cache
     def __get__(self, instance, owner):
         start = self.start(instance)
         block = start // 8
@@ -186,6 +221,7 @@ class fixed_size_loop(mnemonic):
         self.cls = cls
         mnemonic.__init__(self, length)
 
+    @cache
     def __get__(self, instance, owner):
         length = self.real_length(instance) // 8
         start = self.start(instance) // 8
@@ -207,6 +243,7 @@ class fixed_count_loop(mnemonic):
         self.count = count
         mnemonic.__init__(self, None)
 
+    @cache
     def __get__(self, instance, owner):
         start = self.start(instance) // 8
         result = []
@@ -217,6 +254,7 @@ class fixed_count_loop(mnemonic):
             start += len(obj) // 8
         return result
 
+    @meta_cache('count')
     def real_count(self, instance):
         if isinstance(self.count, int):
             return self.count
@@ -228,6 +266,7 @@ class fixed_count_loop(mnemonic):
             return getattr(instance, self.count)
         return self.count
 
+    @meta_cache('len')
     def real_length(self, instance):
         return sum(mnemonic.real_length(sub)
                    for sub in getattr(instance, self.name)
@@ -241,18 +280,20 @@ class case_table(mnemonic):
         self.cls = cls
         self.count = 1
         if isinstance(condition, mnemonic):
-            self.condition = lambda instance: condition.__get__(instance, instance.__class__)
+            self.condition = lambda instance: getattr(instance, condition.name)
         else:
             self.condition = condition
 
         mnemonic.__init__(self, None)
 
+    @cache
     def __get__(self, instance, owner):
         if self.condition(instance):
             start_pos = self.start(instance)
             return self.cls(instance._packet, pos=start_pos)
         return None
 
+    @meta_cache('len')
     def real_length(self, instance):
         if self.condition(instance):
             return sum(mnemonic.real_length(instance)
