@@ -161,6 +161,10 @@ def has_payload(packet):
     """このパケットが payload を持っているかどうかを返す"""
     return (packet[3] & 0x10) >> 4
 
+def continuity_counter(packet):
+    """このパケットの continuity_counter を返す"""
+    return packet[3] & 0x0F
+
 def adaptation_field(packet):
     """パケットから adaptaton field 部分を返す"""
 
