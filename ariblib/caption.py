@@ -82,10 +82,11 @@ class CProfileString(object):
                     except KeyError:
                         yield '(0x{:x})'.format(char1)
             elif 0x20 < char1 < 0x2f:
-                if char1 in self.drcs and self.drcs[char1] in mapping:
-                    yield mapping[self.drcs[char1]]
-                else:
-                    yield '{{{{drcs:0x{:02X}:{}}}}}'.format(char1, self.drcs[char1])
+                if char1 in self.drcs:
+                    if self.drcs[char1] in mapping:
+                        yield mapping[self.drcs[char1]]
+                    else:
+                        yield '{{{{drcs:0x{:02X}:{}}}}}'.format(char1, self.drcs[char1])
             elif char1 in self.mapping:
                 yield self.mapping[char1]
 
