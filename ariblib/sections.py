@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from ariblib.aribstr import AribString
 from ariblib.descriptors import descriptors
-from ariblib.mnemonics import bcdtime, bslbf, loop, rpchof, mjd, uimsbf
+from ariblib.mnemonics import bcdtime, bslbf, loop, rpchof, mjd, times, uimsbf
 from ariblib.syntax import Syntax
 
 class Section(Syntax):
@@ -589,12 +589,48 @@ class EntitlementControlMessage(Section):
 
 class SoftwareDownloadTriggerSection(Section):
 
-    """ARIB-STD-B1, B21
+    """ソフトウェアダウンロードトリガーセクション SDTT (ARIB-STD-B21-12.2.1.1)"""
 
-    FIXME: 未実装
-    """
-
+    _pids = [0x23, 0x28]
     _table_ids = [0xC3]
+
+    table_id = uimsbf(8)
+    section_syntax_indicator = bslbf(1)
+    reserved_future_use = bslbf(1)
+    reserved_1 = bslbf(1)
+    section_length = uimsbf(12)
+    maker_id = uimsbf(8)
+    model_id = uimsbf(8)
+    reserved_2 = bslbf(2)
+    version_number = uimsbf(5)
+    current_next_indicator = uimsbf(1)
+    section_number = uimsbf(8)
+    last_section_number = uimsbf(8)
+    transport_stream_id = uimsbf(16)
+    original_networl_id = uimsbf(16)
+    service_id = uimsbf(16)
+    num_of_contents = uimsbf(8)
+
+    @times(num_of_contents)
+    class groups(Syntax):
+        group = bslbf(4)
+        target_version = uimsbf(12)
+        new_version = uimsbf(12)
+        download_level = bslbf(2)
+        version_indicator = bslbf(2)
+        content_description_length = uimsbf(12)
+        reserved = bslbf(4)
+        schedule_description_length = uimsbf(12)
+        schedule_timeshift_information = uimsbf(4)
+
+        @loop(schedule_description_length)
+        class schedules(Syntax):
+            start_time = mjd(40)
+            duration = bcdtime(24)
+
+        descriptors = descriptors(lambda self: self.content_description_length - self.schedule_description_length)
+
+    CRC_32 = rpchof(32)
 
 class CommonDataSection(Section):
 

@@ -428,6 +428,70 @@ class VideoDecodeControlDescriptor(Descriptor):
     video_encode_format = bslbf(4)
     reserved_future_use = bslbf(2)
 
+class DownloadContentDescriptor(Descriptor):
+
+    """ダウンロードコンテンツ記述子(ARIB-STD-B21-12.2.1.1)"""
+
+    _tag = 0xC9
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    reboot = bslbf(1)
+    add_on = bslbf(1)
+    compatibility_flag = bslbf(1)
+    module_info_flag = bslbf(1)
+    text_info_flag = bslbf(1)
+    reserved_1 = bslbf(3)
+    component_size = uimsbf(32)
+    download_id = uimsbf(32)
+    time_out_value_DII = uimsbf(32)
+    leak_rate = uimsbf(22)
+    reserved_2 = bslbf(2)
+    component_tag = uimsbf(8)
+
+    @case(compatibility_flag)
+    class CompatibilityDescriptor(Syntax):
+        """Compatibility Descriptor (ARIB-STD-B21-12.2.2.1)"""
+
+        compatibility_descriptor_length = uimsbf(16)
+        descriptor_count = uimsbf(16)
+
+        @times(descriptor_count)
+        class compatibility_descriptors(Syntax):
+            descriptor_type = uimsbf(8)
+            descriptor_length = uimsbf(8)
+            specifier_type = uimsbf(8)
+            specifier_data = bslbf(24)
+            model = uimsbf(16)
+            version = uimsbf(16)
+            sub_descriptor_count = uimsbf(8)
+
+            @times(sub_descriptor_count)
+            class sub_descriptors(Syntax):
+                sub_descriptor_type = uimsbf(8)
+                sub_descriptor_length = uimsbf(8)
+                additional_information = uimsbf(sub_descriptor_length)
+
+    @case(module_info_flag)
+    class ModuleInfo(Syntax):
+        num_of_modules = uimsbf(16)
+
+        @times(num_of_modules)
+        class modules(Syntax):
+            module_id = uimsbf(16)
+            module_size = uimsbf(32)
+            module_info_length = uimsbf(8)
+            module_info_byte = uimsbf(module_info_length)
+
+    private_data_length = uimsbf(8)
+    private_date_byte = uimsbf(private_data_length)
+
+    @case(text_info_flag)
+    class TextInfo(Syntax):
+        ISO_639_language_code = char(24)
+        text_length = uimsbf(8)
+        text_char = aribstr(text_length)
+
 class EncryptDescriptor(Descriptor):
 
     """Encrypt記述子(ARIB-STD-B15-3.4.4.7)"""
@@ -775,7 +839,7 @@ tags = {
     0xC7: DataContentDescriptor,
     0xC8: VideoDecodeControlDescriptor,
     0xCB: EncryptDescriptor,
-    #0xC9: ダウンロードコンテンツ記述子,
+    0xC9: DownloadContentDescriptor,
     #0xCA: CA_EMM_TS記述子,
     #0xCB: CA契約情報記述子,
     #0xCC: CAサービス記述子,
