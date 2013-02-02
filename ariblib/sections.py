@@ -302,6 +302,32 @@ class EventInformationSection(Section):
 
     CRC_32 = rpchof(32)
 
+class ActualStreamEventInformationSection(EventInformationSection)
+
+    """自ストリームEIT"""
+
+    _table_ids = range(0x50, 0x60)
+
+class ActualStreamPresentFollowingEventInformationSection(
+    ActualStreamEventInformationSection):
+
+    """自ストリームEIT[p/f]"""
+
+    _table_ids = [0x4E]
+
+class OtherStreamEventInformationSection(EventInformationSection)
+
+    """他ストリームEIT"""
+
+    _table_ids = range(0x60, 0x70)
+
+class OtherStreamPresentFollowingEventInformationSection(
+    OtherStreamEventInformationSection):
+
+    """他ストリームEIT[p/f]"""
+
+    _table_ids = [0x4F]
+
 class RunningStatusSection(Section):
 
     """進行状態セクション RST (ARIB-STD-B10-2-5.2.10)"""
