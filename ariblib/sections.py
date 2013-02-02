@@ -302,7 +302,7 @@ class EventInformationSection(Section):
 
     CRC_32 = rpchof(32)
 
-class ActualStreamEventInformationSection(EventInformationSection)
+class ActualStreamEventInformationSection(EventInformationSection):
 
     """自ストリームEIT"""
 
@@ -315,7 +315,7 @@ class ActualStreamPresentFollowingEventInformationSection(
 
     _table_ids = [0x4E]
 
-class OtherStreamEventInformationSection(EventInformationSection)
+class OtherStreamEventInformationSection(EventInformationSection):
 
     """他ストリームEIT"""
 
