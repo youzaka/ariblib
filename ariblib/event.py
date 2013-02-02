@@ -76,6 +76,7 @@ class Event(object):
                 else:
                     detail.append((key, item.item_char))
         detail = [(key, AribString(value)) for key, value in detail[1:]]
-        self.detail = dict(detail)
-        self.longdesc = '\n'.join("{}\n{}\n".format(key, value) for key, value in detail)
+        if detail:
+            self.detail = dict(detail)
+            self.longdesc = '\n'.join("{}\n{}\n".format(key, value) for key, value in detail)
 
