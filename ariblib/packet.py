@@ -3,6 +3,7 @@
 from collections import defaultdict
 from datetime import timedelta
 from io import BufferedReader, FileIO
+from itertools import chain
 
 from ariblib.mnemonics import (bcdtime, bslbf, case, char, loop, otm, raw, times,
                                uimsbf)
@@ -25,6 +26,7 @@ class TransportStreamFile(BufferedReader):
     def __init__(self, path, chunk_size=10000):
         BufferedReader.__init__(self, FileIO(path))
         self.chunk_size = chunk_size
+        self.callbacks = dict()
 
     def __iter__(self):
         packet_size = self.PACKET_SIZE
@@ -42,30 +44,52 @@ class TransportStreamFile(BufferedReader):
     def __next__(self):
         return self.read(self.PACKET_SIZE)
 
-    def sections(self, Section):
+    def on(self, Section):
+        """セクションごとにコールバック関数を設定する
+        いまのところ、一つのセクションについてコールバック関数は1つのみ定義できる。
+        """
+
+        def attach_callback(callback):
+            self.callbacks[Section] = callback
+        return attach_callback
+
+    def execute(self):
+        """指定されたセクションがyieldされるごとにコールバック関数を実行する"""
+
+        for section in self.sections(*self.callbacks.keys()):
+            self.callbacks[type(section)](section)
+
+    def sections(self, *Sections):
         """パケットストリームから指定のセクションを返す"""
 
         buf = defaultdict(bytearray)
 
-        pids = Section._pids
-        table_ids = Section._table_ids
+        target_pids = set(chain.from_iterable(Section._pids for Section in Sections))
+        table_map = defaultdict(set)
+        target_ids = dict()
+        for Section in Sections:
+            for PID in Section._pids:
+                for table_id in Section._table_ids:
+                    target_ids[(PID, table_id)] = Section
+                    table_map[PID].add(table_id)
 
         for packet in self:
             PID = pid(packet)
-            if PID not in pids:
+            if PID not in target_pids:
                 continue
 
             buffer = buf[PID]
+            table_ids = table_map[PID]
             prev, current = payload(packet)
             if payload_unit_start_indicator(packet):
                 if buffer:
                     buffer.extend(prev)
                 while buffer and buffer[0] != 0xFF:
-                    section = Section(buffer[:])
                     if buffer[0] in table_ids:
+                        section = target_ids[(PID, buffer[0])](buffer[:])
                         yield section
                     try:
-                        next_start = section.section_length + 3
+                        next_start = ((buffer[1] & 0x0F) << 8 | buffer[2]) + 3
                         buffer[:] = buffer[next_start:]
                     except (IndexError, AttributeError):
                         break
@@ -78,7 +102,7 @@ class TransportStreamFile(BufferedReader):
         # 残ったバッファを片付ける
         for buffer in buf.values():
             if buffer[0] in table_ids:
-                section = Section(buffer)
+                section = target_ids[(PID, buffer[0])](buffer[:])
                 if section.isfull():
                     yield section
 
