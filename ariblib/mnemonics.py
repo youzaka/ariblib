@@ -69,7 +69,7 @@ class mnemonic(object):
 
 class uimsbf(mnemonic):
 
-    """unsigned integer most significant bit first[符号無し整数、最上位ビットが先頭]"""
+    """unsigned integer most significant bit first[符号無し整数、最上位ビットが先頭]"""
 
     @cache
     def __get__(self, instance, owner):
@@ -95,13 +95,13 @@ class uimsbf(mnemonic):
 
 class bslbf(uimsbf):
 
-    """bit string,left bit first[ビット列、左ビットが先頭]
+    """bit string,left bit first[ビット列、左ビットが先頭]
 
     実質 uimsbf と同じ処理をすればよい。"""
 
 class rpchof(uimsbf):
 
-    """remainder polynominal coefficients, highest order first[多項式係数の剰余、最上位階数が先頭]
+    """remainder polynominal coefficients, highest order first[多項式係数の剰余、最上位階数が先頭]
 
     正しい CRC の値かどうか検証する必要があるが、とりあえず uimsbf と同じ処理とする。"""
 
