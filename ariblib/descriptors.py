@@ -646,7 +646,7 @@ class SIParameterDescriptor(Descriptor):
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
-    parameter_version = uimsbf(8)
+    parameter_version = uimsbf(8) # 地デジ 0xFF
     update_time = mjd(16)
 
     @loop(lambda self: self.descriptor_length - 3)
@@ -654,9 +654,35 @@ class SIParameterDescriptor(Descriptor):
         table_id = uimsbf(8)
         table_description_length = uimsbf(8)
 
-        @loop(lambda self: self.table_description_length)
-        class descriptions(Syntax):
-            table_description_byte = uimsbf(8)
+        # ARIB-TD-B-14-31.1.2.1
+        @case(lambda self: self.table_id in (0x40, 0x42, 0xC3, 0xC4, 0xC8))
+        class table_description_1(Syntax):
+            table_cycle = bcd(8)
+
+        @case(lambda self: self.table_id == 0x4E)
+        class table_description_2(Syntax):
+            table_cycle_H_EIT_PF = bcd(8)
+            table_cycle_M_EIT = bcd(8)
+            table_cycle_L_EIT = bcd(8)
+            num_of_M_EIT_event = uimsbf(4)
+            num_of_L_EIT_event = uimsbf(4)
+
+        @case(lambda self: self.table_id in (0x50, 0x58))
+        class table_description_3(Syntax):
+            @loop(lambda self: self.table_description_length)
+            class cycles(Syntax):
+                media_type = uimsbf(2)
+                pattern = uimsbf(2)
+                reserved_1 = bslbf(4)
+                schdule_range = bcd(8)
+                base_cycle = bcd(12)
+                reserved_2 = bslbf(2)
+                cycle_group_count = uimsbf(2)
+
+                @times(cycle_group_count)
+                class groups(Syntax):
+                    num_of_segment = bcd(8)
+                    cycle = bcd(8)
 
 class ContentAvailabilityDescriptor(Descriptor):
 
@@ -786,13 +812,15 @@ class DataComponentDescriptor(Descriptor):
 
 class SystemManagementDescriptor(Descriptor):
 
-    """システム管理記述子(ARIB-STD-B10-2-6.2.21)"""
+    """システム管理記述子(ARIB-STD-B10-2-6.2.21, ARIB-TR-B14-30.4.2.2)"""
 
     _tag = 0xFE
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
-    system_management_id = uimsbf(16)
+    broadcasting_flag = uimsbf(2) # 放送 0x00
+    broadcasting_identifier = uimsbf(6) # 地デジ 0x03, BS 0x02
+    additional_broadcasting_identification = uimsbf(8) # 0x01
     additional_identification_info = uimsbf(lambda self: self.descriptor_length - 2)
 
 #FIXME: わざわざこの辞書を明示したくない

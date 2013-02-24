@@ -233,6 +233,18 @@ class ServiceDescriptionSection(Section):
 
     CRC_32 = rpchof(32)
 
+class ActualStreamServiceDescriptionSection(ServiceDescriptionSection):
+
+    """自ストリームSDT"""
+
+    _table_ids = [0x42]
+
+class OtherStreamServiceDescriptionSection(ServiceDescriptionSection):
+
+    """他ストリームSDT"""
+
+    _tale_ids = [0x46]
+
 class BouquetAssociationSection(Section):
 
     """ブーケアソシエーションセクション BAT (ARIB-STD-B10-2-5.2.5)"""
