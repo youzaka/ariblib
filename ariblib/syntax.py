@@ -57,9 +57,10 @@ class Syntax(metaclass=SyntaxType):
 
     """シンタックスの親クラス"""
 
-    def __init__(self, packet, pos=0):
+    def __init__(self, packet, pos=0, parent=None):
         self._packet = packet
         self._pos = pos
+        self._parent = parent
 
     def __len__(self):
         """このシンタックスが持っているビット列表記の長さを全て数え上げ、
@@ -78,6 +79,10 @@ class Syntax(metaclass=SyntaxType):
                     return getattr(sub, name)
             except AttributeError:
                 pass
+
+        # 親が与えられている場合は親のプロパティも参照する
+        if self._parent:
+            return getattr(self._parent, name)
 
     def get_names(self):
         """このシンタックスインスタンスでアクセスできる

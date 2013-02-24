@@ -290,7 +290,7 @@ class case_table(mnemonic):
     def __get__(self, instance, owner):
         if self.condition(instance):
             start_pos = self.start(instance)
-            return self.cls(instance._packet, pos=start_pos)
+            return self.cls(instance._packet, pos=start_pos, parent=instance)
         return None
 
     @meta_cache('len')
