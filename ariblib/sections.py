@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from ariblib.aribstr import AribString
 from ariblib.descriptors import descriptors
-from ariblib.mnemonics import bcdtime, bslbf, loop, rpchof, mjd, times, uimsbf
+from ariblib.mnemonics import bcdtime, bslbf, loop, raw, rpchof, mjd, times, uimsbf
 from ariblib.syntax import Syntax
 
 class Section(Syntax):
@@ -600,10 +600,14 @@ class CommonDataSection(Section):
     descriptor_loop_length = uimsbf(12)
     descriptors = descriptors(descriptor_loop_length)
 
-    @loop(lambda self: self.section_length - (
-            self.descriptor_loop_length + 14))
-    class data_modules(Syntax):
-        data_module_byte = uimsbf(8)
+    # 地上デジタル放送ではdata_module_byteはCDT伝送方式サービスロゴである (ARIB-TR-B14-1-5.4.1.2)
+    logo_type = uimsbf(8)
+    reserved_future_use_3 = bslbf(7)
+    logo_id = uimsbf(9)
+    reserved_future_use_4 = bslbf(4)
+    logo_version = uimsbf(12)
+    data_size = uimsbf(16)
+    data_byte = raw(data_size)
 
     CRC_32 = rpchof(32)
 
