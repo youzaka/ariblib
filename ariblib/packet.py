@@ -100,7 +100,7 @@ class TransportStreamFile(BufferedReader):
                 buffer.extend(current)
 
         # 残ったバッファを片付ける
-        for buffer in buf.values():
+        for PID, buffer in buf.items():
             if buffer[0] in table_ids:
                 section = target_ids[(PID, buffer[0])](buffer[:])
                 if section.isfull():
