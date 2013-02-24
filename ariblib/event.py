@@ -5,12 +5,12 @@
 from ariblib.aribstr import AribString
 from ariblib.constants import *
 from ariblib.descriptors import *
-from ariblib.sections import EventInformationSection
+from ariblib.sections import ActualStreamEventInformationSection
 
 def events(ts):
     """トランスポートストリームから Event オブジェクトを返すジェネレータ"""
 
-    for eit in ts.sections(EventInformationSection):
+    for eit in ts.sections(ActualStreamEventInformationSection):
         for event in eit.events:
             yield Event(eit, event)
 
@@ -60,12 +60,21 @@ class Event(object):
             self.group_type_string = EVENT_GROUP_TYPE[egd.group_type]
             self.events = dict((e.service_id, e.event_id) for e in egd.events)
         for ctd in desc.get(ContentDescriptor, []):
-            nibble = ctd.nibbles[0]
-            self.nibble1 = nibble.content_nibble_level_1
-            self.nibble2 = nibble.content_nibble_level_2
-            self.genre = CONTENT_TYPE[nibble.content_nibble_level_1][0]
-            self.subgenre = (CONTENT_TYPE[nibble.content_nibble_level_1][1]
-                                         [nibble.content_nibble_level_2])
+            self.nibble1 = []
+            self.nibble2 = []
+            self.genre = []
+            self.subgenre = []
+            for nibble in ctd.nibbles:
+                self.nibble1.append(
+                    nibble.content_nibble_level_1)
+                self.nibble2.append(
+                    nibble.content_nibble_level_2)
+                self.genre.append(
+                    CONTENT_TYPE[nibble.content_nibble_level_1][0])
+                self.subgenre.append(
+                    CONTENT_TYPE[nibble.content_nibble_level_1][1]
+                                [nibble.content_nibble_level_2])
+
         detail = [('', [])]
         for eed in desc.get(ExtendedEventDescriptor, []):
             for item in eed.items:
@@ -75,7 +84,7 @@ class Event(object):
                     detail[-1][1].extend(item.item_char)
                 else:
                     detail.append((key, item.item_char))
-        detail = [(key, AribString(value)) for key, value in detail[1:]]
+        detail = [(str(key), AribString(value)) for key, value in detail[1:]]
         if detail:
             self.detail = dict(detail)
             self.longdesc = '\n'.join("{}\n{}\n".format(key, value) for key, value in detail)
