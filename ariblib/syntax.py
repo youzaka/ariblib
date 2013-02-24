@@ -81,7 +81,8 @@ class Syntax(metaclass=SyntaxType):
                 pass
 
         # 親が与えられている場合は親のプロパティも参照する
-        if self._parent:
+        if (self._parent and
+            name in [mnemonic.name for mnemonic in self._parent._mnemonics]):
             return getattr(self._parent, name)
 
     def get_names(self):
