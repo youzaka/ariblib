@@ -256,8 +256,7 @@ class ContentDescriptor(Descriptor):
     class nibbles(Syntax):
         content_nibble_level_1 = uimsbf(4)
         content_nibble_level_2 = uimsbf(4)
-        user_nibble_1 = uimsbf(4)
-        user_nibble_2 = uimsbf(4)
+        user_nibble = uimsbf(8)
 
 class DigitalCopyControlDescriptor(Descriptor):
 
@@ -494,7 +493,7 @@ class DownloadContentDescriptor(Descriptor):
 
 class EncryptDescriptor(Descriptor):
 
-    """Encrypt記述子(ARIB-STD-B15-3.4.4.7)"""
+    """Encrypt記述子(ARIB-STD-B25-3.4.4.7)"""
 
     _tag = 0xCB
 

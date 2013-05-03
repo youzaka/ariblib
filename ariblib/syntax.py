@@ -99,3 +99,4 @@ class Syntax(metaclass=SyntaxType):
                 result.append(name)
         return result
 
+

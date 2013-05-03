@@ -19,7 +19,7 @@ class Event(object):
     """イベントラッパークラス"""
 
     from_eit = ['service_id', 'transport_stream_id', 'original_network_id']
-    from_event = ['event_id', 'start_time', 'duration']
+    from_event = ['event_id', 'start_time', 'duration', 'free_CA_mode']
 
     def __init__(self, eit, event):
         for field in self.from_eit:
@@ -62,8 +62,10 @@ class Event(object):
         for ctd in desc.get(ContentDescriptor, []):
             self.nibble1 = []
             self.nibble2 = []
+            self.user_nibble = []
             self.genre = []
             self.subgenre = []
+            self.user_genre = []
             for nibble in ctd.nibbles:
                 self.nibble1.append(
                     nibble.content_nibble_level_1)
@@ -74,7 +76,8 @@ class Event(object):
                 self.subgenre.append(
                     CONTENT_TYPE[nibble.content_nibble_level_1][1]
                                 [nibble.content_nibble_level_2])
-
+                self.user_nibble.append(nibble.user_nibble)
+                self.user_genre.append(USER_TYPE.get(nibble.user_nibble, ''))
         detail = [('', [])]
         for eed in desc.get(ExtendedEventDescriptor, []):
             for item in eed.items:
@@ -88,4 +91,16 @@ class Event(object):
         if detail:
             self.detail = dict(detail)
             self.longdesc = '\n'.join("{}\n{}\n".format(key, value) for key, value in detail)
+
+if __name__ == '__main__':
+    from subprocess import Popen, PIPE
+    from ariblib import tsopen
+    recpt1 = Popen(['recpt1', '236', '130', '-'], stdout=PIPE)
+    with tsopen(recpt1.stdout.fileno()) as ts:
+        for event in events(ts):
+            print(dir(event))
+            try:
+                print(event.title, event.free_CA_mode)
+            except:
+                pass
 
