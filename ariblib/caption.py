@@ -116,7 +116,7 @@ class ColoredCProfileString(CProfileString):
     }
 
     def __str__(self):
-        str = ''.join(self).strip() + '\033[37m'
+        str = ''.join(self).strip() + '\033[0m'
         self.__str__ = lambda self: str
         return str
 
