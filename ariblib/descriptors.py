@@ -101,7 +101,7 @@ class SatelliteDeliverySystemDescriptor(Descriptor):
     orbital_position = bcd(16, 1)
     west_east_flag = bslbf(1)
     polarisation = bslbf(2)
-    modulaton = bslbf(5)
+    modulation = bslbf(5)
     symbol_rate = bcd(28, 5)
     FEC_inner = bslbf(4)
 
