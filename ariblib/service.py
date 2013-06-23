@@ -11,9 +11,9 @@ def services(ts, channel_id=None, stream=None):
     """トランスポートストリームから Service オブジェクトを返すジェネレータ"""
 
     if channel_id is None:
-        get_channel_id = lambda service: service.service_id
+        get_channel_id = lambda sdt: tsid2channel(sdt.transport_stream_id)
     else:
-        get_channel_id = lambda service: channel_id
+        get_channel_id = lambda sdt: channel_id
 
     if stream == 'actual':
         SDT = ActualStreamServiceDescriptionSection
@@ -24,8 +24,26 @@ def services(ts, channel_id=None, stream=None):
 
     for sdt in ts.sections(SDT):
         for service in sdt.services:
-            yield Service(service, get_channel_id(service))
+            yield Service(service, get_channel_id(sdt))
 
+def parse_tsid(tsid):
+    # NHK-BS対応
+    if 16625 <= tsid <= 16626:
+        tsid -= 1
+    network_lower_4bit = (tsid & 0xF000) >> 12
+    new = (tsid & 0x0E000) >> 9
+    repeater = (tsid & 0x01F0) >> 4
+    slot = tsid & 0x0007
+
+    return (network_lower_4bit, new, repeater, slot)
+
+def tsid2channel(tsid):
+    """transport_stream_id を recpt1 が認識する channel 形式に変える"""
+    lower, new, repeater, slot = parse_tsid(tsid)
+    if repeater % 2 == 0:
+        return "CS{}".format(repeater)
+    else:
+        return "BS{}_{}".format(repeater, slot)
 
 class Service(object):
 
