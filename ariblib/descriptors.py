@@ -172,9 +172,6 @@ class LinkageDescriptor(Descriptor):
                 platform_name_length = uimsbf(8)
                 text_char = aribstr(platform_name_length)
 
-    private_data_byte = bslbf(lambda self: self.descriptor_length -
-        (self.platform_id_data_length + 1))
-
     @case(lambda self: self.linkage_type != 0x0B)
     class default(Syntax):
         private_data_byte = bslbf(lambda self: self.descriptor_length - 7)
