@@ -94,9 +94,33 @@ class Syntax(metaclass=SyntaxType):
             name = mnemonic.name
             if isinstance(mnemonic, case_table):
                 if mnemonic.condition(self):
-                    result.extend(getattr(self, name).get_names())
+                    result.extend(mnemonic.cls(self).get_names())
             else:
                 result.append(name)
         return result
 
+    def dump(self, indent=0):
+        from ariblib.sections import Section
+        from ariblib.descriptors import Descriptor
+        from types import GeneratorType
+        from collections import defaultdict
+        print('{}{}'.format(' ' * indent, '-' * (80 - indent)))
+        if isinstance(self, Section) or isinstance(self, Descriptor):
+            print('{}<<{}>>'.format(' ' * indent, self.__class__.__name__))
+        for name in self.get_names():
+            value = getattr(self, name)
+            if isinstance(value, Syntax):
+                value.dump(indent + 2)
+            elif isinstance(value, defaultdict):
+                for value in value.values():
+                    for child in value:
+                        child.dump(indent + 2)
+            elif isinstance(value, list):
+                for child in value:
+                    child.dump(indent + 2)
+            elif type(value) is GeneratorType:
+                for child in value:
+                    child.dump(indent + 2)
+            else:
+                print("{}{}\t{}".format(' ' * indent, name, value))
 
