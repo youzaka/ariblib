@@ -815,7 +815,7 @@ class SystemManagementDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     broadcasting_flag = uimsbf(2) # 放送 0x00
-    broadcasting_identifier = uimsbf(6) # 地デジ 0x03, BS 0x02
+    broadcasting_identifier = uimsbf(6) # 地デジ 0x03, BS 0x02, CS 0x04
     additional_broadcasting_identification = uimsbf(8) # 0x01
     additional_identification_info = uimsbf(lambda self: self.descriptor_length - 2)
 
