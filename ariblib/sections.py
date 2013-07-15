@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 from ariblib.aribstr import AribString
-from ariblib.descriptors import descriptors
+from ariblib.descriptors import descriptors, ExtendedEventDescriptor
 from ariblib.mnemonics import bcdtime, bslbf, loop, raw, rpchof, mjd, times, uimsbf
 from ariblib.syntax import Syntax
 
@@ -18,6 +18,10 @@ class Section(Syntax):
     """
 
     _table_ids = range(256)
+
+    def __init__(self, packet, pos=0, parent=None):
+        Syntax.__init__(self, packet, pos, parent)
+        self.callbacks = dict()
 
     def __getattr__(self, name):
         result = Syntax.__getattr__(self, name)
@@ -34,6 +38,25 @@ class Section(Syntax):
         パケットを持っているかどうかを返す"""
 
         return self.section_length <= len(self) + 3
+
+    def on(self, Descriptor):
+        """記述子ごとにコールバック関数を設定する
+        いまのところ、一つの記述子についてコールバック関数は1つのみ定義できる
+        """
+
+        def attach_callback(callback):
+            self.callbacks[Descriptor] = callback
+        return attach_callback
+
+    def execute(self):
+        """指定された記述子がyieldされるごとにコールバック関数を実行する"""
+
+        for Descriptor, descriptors in self.descriptors.items():
+            if Descriptor == ExtendedEventDescriptor:
+                self.callbacks[Descriptor](descriptors)
+            else:
+                for descriptor in descriptors:
+                    self.callbacks[Descriptor](descriptor)
 
 class ProgramAssociationSection(Section):
 

@@ -40,7 +40,6 @@ class Descriptor(Syntax):
     def get(tag):
         return tags.get(tag, Descriptor)
 
-
 class CAIdentifierDescriptor(Descriptor):
 
     """CA識別記述子 (ARIB-STD-B10-2-6.2.2)"""
