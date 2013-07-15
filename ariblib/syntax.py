@@ -61,6 +61,7 @@ class Syntax(metaclass=SyntaxType):
         self._packet = packet
         self._pos = pos
         self._parent = parent
+        self._callbacks = dict()
 
     def __len__(self):
         """このシンタックスが持っているビット列表記の長さを全て数え上げ、
@@ -123,4 +124,30 @@ class Syntax(metaclass=SyntaxType):
                     child.dump(indent + 2)
             else:
                 print("{}{}\t{}".format(' ' * indent, name, value))
+
+    def on(self, Descriptor, descriptor_name='descriptors'):
+        """記述子ごとにコールバック関数を設定する
+        いまのところ、一つの記述子についてコールバック関数は1つのみ定義できる。
+        """
+
+        self.descriptor_name = descriptor_name
+        def attach_callback(callback):
+            self._callbacks[Descriptor] = callback
+        return attach_callback
+
+    def execute(self):
+        """指定された記述子がyieldされるごとにコールバック関数を実行する"""
+        from ariblib.descriptors import ExtendedEventDescriptor
+
+        for descriptor_type, descriptors in getattr(self, self.descriptor_name).items():
+            if descriptor_type not in self._callbacks:
+                continue
+
+            callback = self._callbacks[descriptor_type]
+            if descriptor_type == ExtendedEventDescriptor:
+                # 拡張形式イベント記述子の場合は別途対応が必要。TODO
+                callback(descriptors)
+            else:
+                for descriptor in descriptors:
+                    callback(descriptor)
 
