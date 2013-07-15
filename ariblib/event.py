@@ -14,6 +14,7 @@ def events(ts):
         for event in eit.events:
             yield Event(eit, event)
 
+
 class Event(object):
 
     """イベントラッパークラス"""
