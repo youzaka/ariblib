@@ -48,9 +48,9 @@ def tsid2channel(tsid):
     # ほんとはSystemManagementDescriptorのbroadcasting_identifierで
     # BS/CSの判別をすべきだと思う
     if repeater % 2 == 0:
-        return "CS{}".format(repeater)
+        return "CS{:02d}".format(repeater)
     else:
-        return "BS{}_{}".format(repeater, slot)
+        return "BS{:02d}_{}".format(repeater, slot)
 
 class Service(object):
 
