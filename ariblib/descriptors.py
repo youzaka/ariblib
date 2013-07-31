@@ -171,7 +171,12 @@ class LinkageDescriptor(Descriptor):
                 platform_name_length = uimsbf(8)
                 text_char = aribstr(platform_name_length)
 
-    @case(lambda self: self.linkage_type != 0x0B)
+    @case(lambda self: self.linkage_type == 0x03)
+    class linkage_type_0x03(Syntax):
+        message_id = uimsbf(8)
+        message = aribstr(lambda self: self.descriptor_length - 8)
+
+    @case(lambda self: self.linkage_type not in (0x03, 0x0B))
     class default(Syntax):
         private_data_byte = bslbf(lambda self: self.descriptor_length - 7)
 
