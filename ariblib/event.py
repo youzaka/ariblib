@@ -33,25 +33,25 @@ class Event(object):
             self.title = sed.event_name_char
             self.desc = sed.text_char
         for cd in desc.get(ComponentDescriptor, []):
-            self.video_stream_content = cd.stream_content
-            self.video_component_type = cd.component_type
+            self.video_content = cd.stream_content
+            self.video_component = cd.component_type
             self.video = COMPONENT_TYPE[cd.stream_content][cd.component_type]
-            self.component_text = cd.component_text
+            self.video_text = cd.component_text
         for dccd in desc.get(DigitalCopyControlDescriptor, []):
             self.copy_control_type = dccd.copy_control_type
             self.copy = DIGITAL_RECORDING_CONTROL_TYPE[dccd.copy_control_type]
         for acd in desc.get(AudioComponentDescriptor, []):
             if acd.main_component_flag:
-                self.audio_stream_content = acd.stream_content
-                self.audio_component_type = acd.component_type
+                self.audio_content = acd.stream_content
+                self.audio_component = acd.component_type
                 self.samplint_rate_type = acd.sampling_rate
                 self.audio = COMPONENT_TYPE[acd.stream_content][acd.component_type]
                 self.sampling_rate = acd.sampling_rate
                 self.sampling_rate_string = SAMPLING_RATE[acd.sampling_rate]
                 self.audio_text = acd.audio_text
             else:
-                self.second_audio_stream_content = acd.stream_content
-                self.second_audio_component_type = acd.component_type
+                self.second_audio_content = acd.stream_content
+                self.second_audio_component = acd.component_type
                 self.second_audio = COMPONENT_TYPE[acd.stream_content][acd.component_type]
                 self.second_sampling_rate = acd.sampling_rate
                 self.second_sampling_rate_string = SAMPLING_RATE[acd.sampling_rate]
