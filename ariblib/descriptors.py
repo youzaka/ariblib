@@ -656,7 +656,7 @@ class SIParameterDescriptor(Descriptor):
         table_id = uimsbf(8)
         table_description_length = uimsbf(8)
 
-        # ARIB-TD-B-14-31.1.2.1
+        # ARIB-TR-B-14-31.1.2.1
         @case(lambda self: self.table_id in (0x40, 0x42, 0xC3, 0xC4, 0xC8))
         class table_description_1(Syntax):
             table_cycle = bcd(8)
