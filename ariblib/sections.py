@@ -697,15 +697,6 @@ class SoftwareDownloadTriggerSection(Section):
 
     CRC_32 = rpchof(32)
 
-class CommonDataSection(Section):
-
-    """ARIB-STD-B1, B21
-
-    FIXME: 未実装
-    """
-
-    _pids = [0x29]
-
 class DSMCCSection(Section):
 
     """ARIB-STD-B24-3-6.5
