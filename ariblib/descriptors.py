@@ -606,7 +606,9 @@ class LogoTransmissionDescriptor(Descriptor):
     class type_03(Syntax):
         logo_char = aribstr(lambda self: self.descriptor_length - 1)
 
-    reserved_future_use = bslbf(lambda self: self.descriptor_length - 1)
+    @case(lambda self: self.logo_transmission_type not in (0x01, 0x02, 0x03))
+    class type_else(Syntax):
+        reserved_future_use = bslbf(lambda self: self.descriptor_length - 1)
 
 class EventGroupDescriptor(Descriptor):
 
