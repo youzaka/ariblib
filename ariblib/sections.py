@@ -409,7 +409,7 @@ class TimeOffsetSection(Section):
     table_id = uimsbf(8)
     section_syntax_indicator = bslbf(1)
     reserved_future_use = bslbf(1)
-    resered1 = bslbf(2)
+    reserved1 = bslbf(2)
     section_length = uimsbf(12)
     JST_time = mjd(40)
     reserved_2 = bslbf(4)
