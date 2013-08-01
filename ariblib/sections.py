@@ -33,6 +33,9 @@ class Section(Syntax):
         raise AttributeError("'{}' object has no attribute '{}'".format(
             self.__class__.__name__, name))
 
+    def __len__(self):
+        return len(self._packet)
+
     def isfull(self):
         """section_length などで指定された分以上の
         パケットを持っているかどうかを返す"""
