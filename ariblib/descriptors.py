@@ -699,6 +699,17 @@ class SIParameterDescriptor(Descriptor):
             table_description_byte = bslbf(lambda self: self.table_description_length)
 
 
+class BroadcasterNameDescriptor(Descriptor):
+
+    """ブロードキャスタ名記述子(ARIB-STD-B10-2-6.2.36)"""
+
+    _tag = 0xD8
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    char = aribstr(descriptor_length)
+
+
 class ContentAvailabilityDescriptor(Descriptor):
 
     """コンテント利用記述子 (ARIB-STD-B10-2-6.2.45)"""
@@ -897,7 +908,7 @@ tags = {
     #0xD5: シリーズ記述子,
     0xD6: EventGroupDescriptor,
     0xD7: SIParameterDescriptor,
-    #0xD8: ブロードキャスタ名記述子,
+    0xD8: BroadcasterNameDescriptor,
     #0xD9: コンポーネントグループ記述子,
     #0xDA: SIプライムTS記述子,
     #0xDB: 掲示板情報記述子,
