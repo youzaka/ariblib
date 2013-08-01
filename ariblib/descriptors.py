@@ -656,12 +656,19 @@ class SIParameterDescriptor(Descriptor):
         table_id = uimsbf(8)
         table_description_length = uimsbf(8)
 
-        # ARIB-TR-B-14-31.1.2.1
-        @case(lambda self: self.table_id in (0x40, 0x42, 0xC3, 0xC4, 0xC8))
-        class table_description_1(Syntax):
+        # ARIB-TR-B14-31.1.2.1, ARIB-TR-B15-31.2.2.1
+        @case(lambda self: self.table_id in
+            (0x40, 0x42, 0x46, 0x4E, 0x4F, 0xC4)
+            and self.table_description_length == 1)
+        class table_description_1_1(Syntax):
             table_cycle = bcd(8)
 
-        @case(lambda self: self.table_id == 0x4E)
+        @case(lambda self: self.table_id in (0xC3, 0xC8))
+        class table_description_1_2(Syntax):
+            table_cycle = bcd(16)
+
+        @case(lambda self: self.table_id == 0x4E and
+                           self.table_description_length == 4)
         class table_description_2(Syntax):
             table_cycle_H_EIT_PF = bcd(8)
             table_cycle_M_EIT = bcd(8)
@@ -669,7 +676,7 @@ class SIParameterDescriptor(Descriptor):
             num_of_M_EIT_event = uimsbf(4)
             num_of_L_EIT_event = uimsbf(4)
 
-        @case(lambda self: self.table_id in (0x50, 0x58))
+        @case(lambda self: self.table_id in (0x50, 0x58, 0x60))
         class table_description_3(Syntax):
             @loop(lambda self: self.table_description_length)
             class cycles(Syntax):
@@ -685,6 +692,12 @@ class SIParameterDescriptor(Descriptor):
                 class groups(Syntax):
                     num_of_segment = bcd(8)
                     cycle = bcd(8)
+
+        @case(lambda self: self.table_id not in(
+            0x40, 0x42, 0x46, 0x4E, 0x4F, 0x50, 0x58, 0x60, 0xC3, 0xC4, 0xC8))
+        class table_description_else(Syntax):
+            table_description_byte = bslbf(lambda self: self.table_description_length)
+
 
 class ContentAvailabilityDescriptor(Descriptor):
 
