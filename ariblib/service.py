@@ -7,7 +7,7 @@ from ariblib.sections import (ServiceDescriptionSection,
     ActualStreamServiceDescriptionSection,
     OtherStreamServiceDescriptionSection)
 
-def services(ts, channel_id=None, stream=None):
+def services(ts, channel_id=None, single=False, stream=None):
     """トランスポートストリームから Service オブジェクトを返すジェネレータ"""
 
     if channel_id is None:
@@ -22,9 +22,14 @@ def services(ts, channel_id=None, stream=None):
     else:
         SDT = ServiceDescriptionSection
 
-    for sdt in ts.sections(SDT):
+    if single:
+        sdt = next(ts.sections(SDT))
         for service in sdt.services:
             yield Service(service, get_channel_id(sdt))
+    else:
+        for sdt in ts.sections(SDT):
+            for service in sdt.services:
+                yield Service(service, get_channel_id(sdt))
 
 def parse_tsid(tsid):
     # NHK-BS対応
@@ -43,9 +48,9 @@ def tsid2channel(tsid):
     # ほんとはSystemManagementDescriptorのbroadcasting_identifierで
     # BS/CSの判別をすべきだと思う
     if repeater % 2 == 0:
-        return "CS{}".format(repeater)
+        return "CS{:02d}".format(repeater)
     else:
-        return "BS{}_{}".format(repeater, slot)
+        return "BS{:02d}_{}".format(repeater, slot)
 
 class Service(object):
 
