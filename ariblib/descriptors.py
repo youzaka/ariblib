@@ -275,6 +275,7 @@ class DigitalCopyControlDescriptor(Descriptor):
     @case(lambda self: self.copy_control_type == 0b01)
     class with_APS(Syntax):
         APS_control_data = bslbf(2)
+
     @case(lambda self: self.copy_control_type != 0b01)
     class without_APS(Syntax):
         reserved_future_use = bslbf(2)
@@ -404,7 +405,24 @@ class DataContentDescriptor(Descriptor):
     data_component_id = uimsbf(16)
     entry_component = uimsbf(8)
     selector_length = uimsbf(8)
-    selector_byte = uimsbf(selector_length)
+
+    # ARIB-STD-B24-1-3-9.6.2
+    # これ以外のselector_byteの実装は、ifの入れ子が正しく処理できないと実装できない
+    @case(lambda self: self.data_component_id == 0x08)
+    class arib_caption_info(Syntax):
+        num_languages = uimsbf(8)
+
+        @times(num_languages)
+        class languages(Syntax):
+            language_tag = bslbf(3)
+            reserved = bslbf(1)
+            DMF = bslbf(4)
+            ISO_639_language_code = char(24)
+
+    @case(lambda self: self.data_component_id != 0x08)
+    class other(Syntax):
+        selector_byte = uimsbf(lambda self: self.selector_length)
+
     num_of_component_ref = uimsbf(8)
 
     @times(num_of_component_ref)
