@@ -101,6 +101,7 @@ class Syntax(metaclass=SyntaxType):
         return result
 
     def dump(self, indent=0):
+        from ariblib.aribstr import AribString
         from ariblib.sections import Section
         from ariblib.descriptors import Descriptor
         from types import GeneratorType
@@ -122,6 +123,8 @@ class Syntax(metaclass=SyntaxType):
             elif type(value) is GeneratorType:
                 for child in value:
                     child.dump(indent + 2)
+            elif isinstance(value, bytearray):
+                print("{}{}\t{}".format(' ' * indent, name, AribString(value)))
             else:
                 print("{}{}\t{}".format(' ' * indent, name, value))
 
