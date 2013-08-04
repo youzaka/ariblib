@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 from ariblib.aribstr import AribString
-from ariblib.descriptors import descriptors
+from ariblib.descriptors import descriptors, ExtendedEventDescriptor
 from ariblib.mnemonics import bcdtime, bslbf, loop, raw, rpchof, mjd, times, uimsbf
 from ariblib.syntax import Syntax
 
@@ -19,6 +19,10 @@ class Section(Syntax):
 
     _table_ids = range(256)
 
+    def __init__(self, packet, pos=0, parent=None):
+        Syntax.__init__(self, packet, pos, parent)
+        self.callbacks = dict()
+
     def __getattr__(self, name):
         result = Syntax.__getattr__(self, name)
         if result is not None:
@@ -29,11 +33,33 @@ class Section(Syntax):
         raise AttributeError("'{}' object has no attribute '{}'".format(
             self.__class__.__name__, name))
 
+    def __len__(self):
+        return len(self._packet)
+
     def isfull(self):
         """section_length などで指定された分以上の
         パケットを持っているかどうかを返す"""
 
         return self.section_length <= len(self) + 3
+
+    def on(self, Descriptor):
+        """記述子ごとにコールバック関数を設定する
+        いまのところ、一つの記述子についてコールバック関数は1つのみ定義できる
+        """
+
+        def attach_callback(callback):
+            self.callbacks[Descriptor] = callback
+        return attach_callback
+
+    def execute(self):
+        """指定された記述子がyieldされるごとにコールバック関数を実行する"""
+
+        for Descriptor, descriptors in self.descriptors.items():
+            if Descriptor == ExtendedEventDescriptor:
+                self.callbacks[Descriptor](descriptors)
+            else:
+                for descriptor in descriptors:
+                    self.callbacks[Descriptor](descriptor)
 
 class ProgramAssociationSection(Section):
 
@@ -386,7 +412,7 @@ class TimeOffsetSection(Section):
     table_id = uimsbf(8)
     section_syntax_indicator = bslbf(1)
     reserved_future_use = bslbf(1)
-    resered1 = bslbf(2)
+    reserved1 = bslbf(2)
     section_length = uimsbf(12)
     JST_time = mjd(40)
     reserved_2 = bslbf(4)
@@ -673,15 +699,6 @@ class SoftwareDownloadTriggerSection(Section):
         descriptors = descriptors(lambda self: self.content_description_length - self.schedule_description_length)
 
     CRC_32 = rpchof(32)
-
-class CommonDataSection(Section):
-
-    """ARIB-STD-B1, B21
-
-    FIXME: 未実装
-    """
-
-    _pids = [0x29]
 
 class DSMCCSection(Section):
 

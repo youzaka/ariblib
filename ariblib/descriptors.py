@@ -40,7 +40,6 @@ class Descriptor(Syntax):
     def get(tag):
         return tags.get(tag, Descriptor)
 
-
 class CAIdentifierDescriptor(Descriptor):
 
     """CA識別記述子 (ARIB-STD-B10-2-6.2.2)"""
@@ -172,7 +171,12 @@ class LinkageDescriptor(Descriptor):
                 platform_name_length = uimsbf(8)
                 text_char = aribstr(platform_name_length)
 
-    @case(lambda self: self.linkage_type != 0x0B)
+    @case(lambda self: self.linkage_type == 0x03)
+    class linkage_type_0x03(Syntax):
+        message_id = uimsbf(8)
+        message = aribstr(lambda self: self.descriptor_length - 8)
+
+    @case(lambda self: self.linkage_type not in (0x03, 0x0B))
     class default(Syntax):
         private_data_byte = bslbf(lambda self: self.descriptor_length - 7)
 
@@ -271,6 +275,7 @@ class DigitalCopyControlDescriptor(Descriptor):
     @case(lambda self: self.copy_control_type == 0b01)
     class with_APS(Syntax):
         APS_control_data = bslbf(2)
+
     @case(lambda self: self.copy_control_type != 0b01)
     class without_APS(Syntax):
         reserved_future_use = bslbf(2)
@@ -400,7 +405,24 @@ class DataContentDescriptor(Descriptor):
     data_component_id = uimsbf(16)
     entry_component = uimsbf(8)
     selector_length = uimsbf(8)
-    selector_byte = uimsbf(selector_length)
+
+    # ARIB-STD-B24-1-3-9.6.2
+    # これ以外のselector_byteの実装は、ifの入れ子が正しく処理できないと実装できない
+    @case(lambda self: self.data_component_id == 0x08)
+    class arib_caption_info(Syntax):
+        num_languages = uimsbf(8)
+
+        @times(num_languages)
+        class languages(Syntax):
+            language_tag = bslbf(3)
+            reserved = bslbf(1)
+            DMF = bslbf(4)
+            ISO_639_language_code = char(24)
+
+    @case(lambda self: self.data_component_id != 0x08)
+    class other(Syntax):
+        selector_byte = uimsbf(lambda self: self.selector_length)
+
     num_of_component_ref = uimsbf(8)
 
     @times(num_of_component_ref)
@@ -602,7 +624,9 @@ class LogoTransmissionDescriptor(Descriptor):
     class type_03(Syntax):
         logo_char = aribstr(lambda self: self.descriptor_length - 1)
 
-    reserved_future_use = bslbf(lambda self: self.descriptor_length - 1)
+    @case(lambda self: self.logo_transmission_type not in (0x01, 0x02, 0x03))
+    class type_else(Syntax):
+        reserved_future_use = bslbf(lambda self: self.descriptor_length - 1)
 
 class EventGroupDescriptor(Descriptor):
 
@@ -650,12 +674,19 @@ class SIParameterDescriptor(Descriptor):
         table_id = uimsbf(8)
         table_description_length = uimsbf(8)
 
-        # ARIB-TD-B-14-31.1.2.1
-        @case(lambda self: self.table_id in (0x40, 0x42, 0xC3, 0xC4, 0xC8))
-        class table_description_1(Syntax):
+        # ARIB-TR-B14-31.1.2.1, ARIB-TR-B15-31.2.2.1
+        @case(lambda self: self.table_id in
+            (0x40, 0x42, 0x46, 0x4E, 0x4F, 0xC4)
+            and self.table_description_length == 1)
+        class table_description_1_1(Syntax):
             table_cycle = bcd(8)
 
-        @case(lambda self: self.table_id == 0x4E)
+        @case(lambda self: self.table_id in (0xC3, 0xC8))
+        class table_description_1_2(Syntax):
+            table_cycle = bcd(16)
+
+        @case(lambda self: self.table_id == 0x4E and
+                           self.table_description_length == 4)
         class table_description_2(Syntax):
             table_cycle_H_EIT_PF = bcd(8)
             table_cycle_M_EIT = bcd(8)
@@ -663,7 +694,7 @@ class SIParameterDescriptor(Descriptor):
             num_of_M_EIT_event = uimsbf(4)
             num_of_L_EIT_event = uimsbf(4)
 
-        @case(lambda self: self.table_id in (0x50, 0x58))
+        @case(lambda self: self.table_id in (0x50, 0x58, 0x60))
         class table_description_3(Syntax):
             @loop(lambda self: self.table_description_length)
             class cycles(Syntax):
@@ -679,6 +710,23 @@ class SIParameterDescriptor(Descriptor):
                 class groups(Syntax):
                     num_of_segment = bcd(8)
                     cycle = bcd(8)
+
+        @case(lambda self: self.table_id not in(
+            0x40, 0x42, 0x46, 0x4E, 0x4F, 0x50, 0x58, 0x60, 0xC3, 0xC4, 0xC8))
+        class table_description_else(Syntax):
+            table_description_byte = bslbf(lambda self: self.table_description_length)
+
+
+class BroadcasterNameDescriptor(Descriptor):
+
+    """ブロードキャスタ名記述子(ARIB-STD-B10-2-6.2.36)"""
+
+    _tag = 0xD8
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    char = aribstr(descriptor_length)
+
 
 class ContentAvailabilityDescriptor(Descriptor):
 
@@ -878,7 +926,7 @@ tags = {
     #0xD5: シリーズ記述子,
     0xD6: EventGroupDescriptor,
     0xD7: SIParameterDescriptor,
-    #0xD8: ブロードキャスタ名記述子,
+    0xD8: BroadcasterNameDescriptor,
     #0xD9: コンポーネントグループ記述子,
     #0xDA: SIプライムTS記述子,
     #0xDB: 掲示板情報記述子,

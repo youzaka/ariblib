@@ -7,7 +7,7 @@ from ariblib.sections import (ServiceDescriptionSection,
     ActualStreamServiceDescriptionSection,
     OtherStreamServiceDescriptionSection)
 
-def services(ts, channel_id=None, stream=None):
+def services(ts, channel_id=None, single=False, stream=None):
     """トランスポートストリームから Service オブジェクトを返すジェネレータ"""
 
     if channel_id is None:
@@ -22,9 +22,14 @@ def services(ts, channel_id=None, stream=None):
     else:
         SDT = ServiceDescriptionSection
 
-    for sdt in ts.sections(SDT):
+    if single:
+        sdt = next(ts.sections(SDT))
         for service in sdt.services:
             yield Service(service, get_channel_id(sdt))
+    else:
+        for sdt in ts.sections(SDT):
+            for service in sdt.services:
+                yield Service(service, get_channel_id(sdt))
 
 def parse_tsid(tsid):
     # NHK-BS対応
@@ -40,10 +45,12 @@ def parse_tsid(tsid):
 def tsid2channel(tsid):
     """transport_stream_id を recpt1 が認識する channel 形式に変える"""
     lower, new, repeater, slot = parse_tsid(tsid)
+    # ほんとはSystemManagementDescriptorのbroadcasting_identifierで
+    # BS/CSの判別をすべきだと思う
     if repeater % 2 == 0:
-        return "CS{}".format(repeater)
+        return "CS{:02d}".format(repeater)
     else:
-        return "BS{}_{}".format(repeater, slot)
+        return "BS{:02d}_{}".format(repeater, slot)
 
 class Service(object):
 
@@ -51,6 +58,16 @@ class Service(object):
 
     def __init__(self, service, channel_id):
         self.channel_id = channel_id
+        if 'BS' in channel_id:
+            self.broadcasting_type = 'BS'
+            self.channel_number = int(channel_id.split('_')[0
+                                      ].replace('BS', ''))
+        elif 'CS' in channel_id:
+            self.broadcasting_type = 'CS'
+            self.channel_number = int(channel_id.replace('CS', ''))
+        else:
+            self.broadcasting_type = 'GR'
+            self.channel_number = int(channel_id)
         self.service_id = service.service_id
         self.eit_flags = service.EIT_user_defined_flags
         self.eit_schedule = service.EIT_schedule_flag

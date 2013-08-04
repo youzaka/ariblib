@@ -26,7 +26,7 @@ class TransportStreamFile(BufferedReader):
     def __init__(self, path, chunk_size=10000):
         BufferedReader.__init__(self, FileIO(path))
         self.chunk_size = chunk_size
-        self.callbacks = dict()
+        self._callbacks = dict()
 
     def __iter__(self):
         packet_size = self.PACKET_SIZE
@@ -50,14 +50,14 @@ class TransportStreamFile(BufferedReader):
         """
 
         def attach_callback(callback):
-            self.callbacks[Section] = callback
+            self._callbacks[Section] = callback
         return attach_callback
 
     def execute(self):
         """指定されたセクションがyieldされるごとにコールバック関数を実行する"""
 
-        for section in self.sections(*self.callbacks.keys()):
-            self.callbacks[type(section)](section)
+        for section in self.sections(*self._callbacks.keys()):
+            self._callbacks[type(section)](section)
 
     def sections(self, *Sections):
         """パケットストリームから指定のセクションを返す"""
