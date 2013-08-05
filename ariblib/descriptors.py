@@ -484,7 +484,7 @@ class DownloadContentDescriptor(Descriptor):
             version = uimsbf(16)
             sub_descriptor_count = uimsbf(8)
 
-            @times(sub_descriptor_count)
+            @times(lambda self: self.sub_descriptor_count)
             class sub_descriptors(Syntax):
                 sub_descriptor_type = uimsbf(8)
                 sub_descriptor_length = uimsbf(8)
@@ -776,6 +776,25 @@ class SIPrimeTSDescriptor(Descriptor):
                 lambda self: self.table_description_length)
 
 
+class LDTLinkageDescriptor(Descriptor):
+
+    """LDTリンク記述子(ARIB-STD-B10-2.6.2.40)"""
+
+    _tag = 0xDC
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    original_service_id = uimsbf(16)
+    transport_stream_id = uimsbf(16)
+    original_network_id = uimsbf(16)
+
+    @loop(lambda self: self.descriptor_length - 6)
+    class descriptions(Syntax):
+        description_id = uimsbf(16)
+        reserved_future_use = bslbf(4)
+        description_type = uimsbf(4)
+        user_defined = bslbf(8)
+
 class ContentAvailabilityDescriptor(Descriptor):
 
     """コンテント利用記述子 (ARIB-STD-B10-2-6.2.45)"""
@@ -978,7 +997,7 @@ tags = {
     #0xD9: コンポーネントグループ記述子,
     0xDA: SIPrimeTSDescriptor,
     #0xDB: 掲示板情報記述子,
-    #0xDC: LDTリンク記述子,
+    0xDC: LDTLinkageDescriptor,
     #0xDD: 連結送信記述子,
     0xDE: ContentAvailabilityDescriptor,
     #0xE0: サービスグループ記述子,

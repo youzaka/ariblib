@@ -623,8 +623,8 @@ class CommonDataSection(Section):
     original_network_id = uimsbf(16)
     data_type = uimsbf(8)
     reserved_future_use_2 = bslbf(4)
-    descriptor_loop_length = uimsbf(12)
-    descriptors = descriptors(descriptor_loop_length)
+    descriptors_loop_length = uimsbf(12)
+    descriptors = descriptors(descriptors_loop_length)
 
     # 地上デジタル放送ではdata_module_byteはCDT伝送方式サービスロゴである (ARIB-TR-B14-1-5.4.1.2)
     logo_type = uimsbf(8)
@@ -639,12 +639,33 @@ class CommonDataSection(Section):
 
 class LinkedDescriptionSection(Section):
 
-    """リンク記述セクション (ARIB-STD-B10-2-5.2.15)
+    """リンク記述セクション LDT (ARIB-STD-B10-2-5.2.15)"""
 
-    FIXME: 未実装
-    """
-
+    _pids = [0x25]
     _table_ids = [0xC7]
+
+    table_id = uimsbf(8)
+    section_syntax_indicator = bslbf(1)
+    reserved_future_use_1 = bslbf(1)
+    reserved_1 = bslbf(2)
+    section_length = uimsbf(12)
+    original_network_id = uimsbf(16)
+    reserved_2 = bslbf(2)
+    version_number = uimsbf(5)
+    current_next_indicator = bslbf(1)
+    section_number = uimsbf(8)
+    last_section_number = uimsbf(8)
+    transport_stream_id = uimsbf(16)
+    original_network_id = uimsbf(16)
+
+    @loop(lambda self: self.section_length - 13)
+    class links(Syntax):
+        description_id = uimsbf(16)
+        reserved_future_use = bslbf(12)
+        descriptors_loop_length = uimsbf(12)
+        descriptors = descriptors(descriptors_loop_length)
+
+    CRC_32 = rpchof(32)
 
 class EntitlementControlMessage(Section):
 

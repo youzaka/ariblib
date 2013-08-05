@@ -10,7 +10,8 @@ with tsopen(sys.stdin.fileno()) as ts:
         BroadcasterInformationSection,
         EventInformationSection,
         ServiceDescriptionSection,
-        NetworkInformationSection
+        NetworkInformationSection,
+        LinkedDescriptionSection,
         ):
         section.dump()
 
