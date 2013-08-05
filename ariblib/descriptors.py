@@ -714,7 +714,8 @@ class SIParameterDescriptor(Descriptor):
         @case(lambda self: self.table_id not in(
             0x40, 0x42, 0x46, 0x4E, 0x4F, 0x50, 0x58, 0x60, 0xC3, 0xC4, 0xC8))
         class table_description_else(Syntax):
-            table_description_byte = bslbf(lambda self: self.table_description_length)
+            table_description_byte = bslbf(
+                lambda self: self.table_description_length)
 
 
 class BroadcasterNameDescriptor(Descriptor):
@@ -726,6 +727,53 @@ class BroadcasterNameDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     char = aribstr(descriptor_length)
+
+
+class SIPrimeTSDescriptor(Descriptor):
+
+    """SIプライムTS記述子(ARIB-DTD-B10-2.6.2.38)"""
+
+    _tag = 0xDA
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    parameter_version = uimsbf(8)
+    update_time = mjd(16)
+    SI_prime_ts_network_id = uimsbf(16)
+    SI_prime_transport_stream_id = uimsbf(16)
+
+    @loop(lambda self: self.descriptor_length - 8)
+    class tables(Syntax):
+        table_id = uimsbf(8)
+        table_description_length = uimsbf(8)
+
+        @case(lambda self: self.table_id in
+            (0x42, 0x46, 0x4E, 0x4F, 0xC5, 0xC6))
+        class table_description_1(Syntax):
+            table_cycle = bslbf(8)
+
+        @case(lambda self: self.table_id in (0x50, 0x60))
+        class table_description_2(Syntax):
+            @loop(lambda self: self.table_description_length)
+            class cycles(Syntax):
+                media_type = uimsbf(2)
+                pattern = uimsbf(2)
+                reserved_1 = bslbf(4)
+                schdule_range = bcd(8)
+                base_cycle = bcd(12)
+                reserved_2 = bslbf(2)
+                cycle_group_count = uimsbf(2)
+
+                @times(cycle_group_count)
+                class groups(Syntax):
+                    num_of_segment = bcd(8)
+                    cycle = bcd(8)
+
+        @case(lambda self: self.table_id not in
+            (0x42, 0x46, 0x4E, 0x4F, 0x50, 0x60, 0xC5, 0xC6))
+        class table_description_else(Syntax):
+            table_description_byte = bslbf(
+                lambda self: self.table_description_length)
 
 
 class ContentAvailabilityDescriptor(Descriptor):
@@ -928,7 +976,7 @@ tags = {
     0xD7: SIParameterDescriptor,
     0xD8: BroadcasterNameDescriptor,
     #0xD9: コンポーネントグループ記述子,
-    #0xDA: SIプライムTS記述子,
+    0xDA: SIPrimeTSDescriptor,
     #0xDB: 掲示板情報記述子,
     #0xDC: LDTリンク記述子,
     #0xDD: 連結送信記述子,
