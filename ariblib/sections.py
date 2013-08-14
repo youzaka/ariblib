@@ -717,7 +717,8 @@ class SoftwareDownloadTriggerSection(Section):
             start_time = mjd(40)
             duration = bcdtime(24)
 
-        descriptors = descriptors(lambda self: self.content_description_length - self.schedule_description_length)
+        descriptors = descriptors(lambda self:
+            self.content_description_length - self.schedule_description_length)
 
     CRC_32 = rpchof(32)
 

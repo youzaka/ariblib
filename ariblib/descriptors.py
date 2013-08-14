@@ -40,18 +40,18 @@ class Descriptor(Syntax):
     def get(tag):
         return tags.get(tag, Descriptor)
 
-class CAIdentifierDescriptor(Descriptor):
+class CADescriptor(Descriptor):
 
-    """CA識別記述子 (ARIB-STD-B10-2-6.2.2)"""
+    """限定受信方式記述子"""
 
     _tag = 0x09
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
-
-    @loop(descriptor_length)
-    class CAs(Syntax):
-        CA_system_id = uimsbf(16)
+    CA_system_ID = uimsbf(16)
+    reserved = bslbf(3)
+    CA_PID = uimsbf(13)
+    private_data_byte = bslbf(lambda self: self.descriptor_length - 4)
 
 class CopyrightDescriptor(Descriptor):
 
@@ -243,6 +243,19 @@ class StreamIdentifierDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     component_tag = uimsbf(8)
+
+class CAIdentifierDescriptor(Descriptor):
+
+    """CA識別記述子 (ARIB-STD-B10-2-6.2.2)"""
+
+    _tag = 0x53
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+
+    @loop(descriptor_length)
+    class CAs(Syntax):
+        CA_system_id = uimsbf(16)
 
 class ContentDescriptor(Descriptor):
 
@@ -490,11 +503,11 @@ class DownloadContentDescriptor(Descriptor):
                 sub_descriptor_length = uimsbf(8)
                 additional_information = uimsbf(sub_descriptor_length)
 
-    @case(module_info_flag)
+    @case(lambda self: self.module_info_flag)
     class ModuleInfo(Syntax):
         num_of_modules = uimsbf(16)
 
-        @times(num_of_modules)
+        @times(lambda self: self.num_of_modules)
         class modules(Syntax):
             module_id = uimsbf(16)
             module_size = uimsbf(32)
@@ -519,6 +532,22 @@ class EncryptDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     encrypt_id = uimsbf(8)
+
+class CAServiceDescriptor(Descriptor):
+
+    """CAサービス記述子(ARIB-STD-B25-4.7.3)"""
+
+    _tag = 0xCC
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    CA_system_id = uimsbf(16)
+    ca_broadcaster_group_id = uimsbf(8)
+    message_control = uimsbf(8)
+
+    @loop(lambda self: self.descriptor_length - 4)
+    class services(Syntax):
+        service_id = uimsbf(16)
 
 class TSInformationDescriptor(Descriptor):
 
@@ -937,7 +966,7 @@ class SystemManagementDescriptor(Descriptor):
 #FIXME: わざわざこの辞書を明示したくない
 tags = {
     #0x05: 登録記述子
-    0x09: CAIdentifierDescriptor,
+    0x09: CADescriptor,
     0x0D: CopyrightDescriptor,
     #0x13: カルーセル識別記述子
     #0x14: アソシエーションタグ記述子,
@@ -962,7 +991,7 @@ tags = {
     0x50: ComponentDescriptor,
     #0x51: モザイク記述子,
     0x52: StreamIdentifierDescriptor,
-    #0x53: CA識別記述子,
+    0x53: CAIdentifierDescriptor,
     0x54: ContentDescriptor,
     #0x55: パレンタルレート記述子,
     #0x58: ローカル時間オフセット記述子,
@@ -981,7 +1010,7 @@ tags = {
     0xC9: DownloadContentDescriptor,
     #0xCA: CA_EMM_TS記述子,
     #0xCB: CA契約情報記述子,
-    #0xCC: CAサービス記述子,
+    0xCC: CAServiceDescriptor,
     0xCD: TSInformationDescriptor,
     0xCE: ExtendedBroadcasterDescriptor,
     0xCF: LogoTransmissionDescriptor,
