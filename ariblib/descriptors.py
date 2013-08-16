@@ -40,9 +40,9 @@ class Descriptor(Syntax):
     def get(tag):
         return tags.get(tag, Descriptor)
 
-class CADescriptor(Descriptor):
+class ConditionalAccessDescriptor(Descriptor):
 
-    """限定受信方式記述子"""
+    """限定受信方式記述子 (ARIB-TR-B14-4-3.2.2.1, ARIB-TR-B15-4-3.2.2.1)"""
 
     _tag = 0x09
 
@@ -180,6 +180,16 @@ class LinkageDescriptor(Descriptor):
     class default(Syntax):
         private_data_byte = bslbf(lambda self: self.descriptor_length - 7)
 
+class TimeShiftedServiceDescriptor(Descriptor):
+
+    """タイムシフトサービス記述子 (ARIB-STD-B10-2-6.2.19)"""
+
+    _tag = 0x4C
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    reference_service_id = uimsbf(16)
+
 class ShortEventDescriptor(Descriptor):
 
     """短形式イベント記述子(ARIB-STD-B10-2-6.2.15)"""
@@ -218,6 +228,17 @@ class ExtendedEventDescriptor(Descriptor):
 
     text_length = uimsbf(8)
     text_char = aribstr(text_length)
+
+class TimeShiftedEventDescriptor(Descriptor):
+
+    """タイムシフトイベント記述子 (ARIB-STD-B10-2-6.2.18)"""
+
+    _tag = 0x4F
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    reference_service_id = uimsbf(16)
+    reference_event_id = uimsbf(16)
 
 class ComponentDescriptor(Descriptor):
 
@@ -271,6 +292,19 @@ class ContentDescriptor(Descriptor):
         content_nibble_level_1 = uimsbf(4)
         content_nibble_level_2 = uimsbf(4)
         user_nibble = uimsbf(8)
+
+class HierarchicalTransmissionDescriptor(Descriptor):
+
+    """階層伝送記述子 (ARIB-STD-B10-2-6.2.22)"""
+
+    _tag = 0xC0
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    reserved_future_use_1 = bslbf(7)
+    quality_level = bslbf(1)
+    reserved_future_use_2 = bslbf(3)
+    reference_PID = uimsbf(13)
 
 class DigitalCopyControlDescriptor(Descriptor):
 
@@ -657,6 +691,23 @@ class LogoTransmissionDescriptor(Descriptor):
     class type_else(Syntax):
         reserved_future_use = bslbf(lambda self: self.descriptor_length - 1)
 
+class SeriesDescriptor(Descriptor):
+
+    """シリーズ記述子 (ARIB-STD-B10-2-6.2.33)"""
+
+    _tag = 0xD5
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    series_id = uimsbf(16)
+    repeat_label = uimsbf(4)
+    program_pattern = uimsbf(3)
+    expire_date_valid_flag = uimsbf(1)
+    expire_date = mjd(16)
+    episode_number = uimsbf(12)
+    last_episode_number = uimsbf(12)
+    series_name_char = aribstr(lambda self: self.descriptor_length - 8)
+
 class EventGroupDescriptor(Descriptor):
 
     """イベントグループ記述子 (ARIB-STD-B10-2-6.2.34)"""
@@ -882,6 +933,28 @@ class PartialReceptionDescriptor(Descriptor):
     class services(Syntax):
         service_id = uimsbf(16)
 
+class EmergencyInformationDescriptor(Descriptor):
+
+    """緊急情報記述子(ARIB-STD-B10-2-7.2.24)"""
+
+    _tag = 0xFC
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+
+    @loop(descriptor_length)
+    class services(Syntax):
+        service_id = uimsbf(16)
+        start_end_flag = bslbf(1)
+        signal_level = bslbf(1)
+        reserved_future_use = bslbf(6)
+        area_code_length = uimsbf(8)
+
+        @loop(lambda self: self.area_code_length)
+        class area_codes(Syntax):
+            area_code = uimsbf(12)
+            reserved_future_use = bslbf(4)
+
 class DataComponentDescriptor(Descriptor):
 
     """データ符号化方式記述子(ARIB-STD-B10-2-6.2.20)
@@ -897,56 +970,13 @@ class DataComponentDescriptor(Descriptor):
     descriptor_length = uimsbf(8)
     data_component_id = uimsbf(16)
 
-    @case(lambda self: self.data_component_id == 0x07)
-    class component_07(Syntax):
-        transmission_format = bslbf(2)
-        entry_point_flag = bslbf(1)
-
-        @case(entry_point_flag)
-        class with_entry_point(Syntax):
-            auto_start_flag = bslbf(1)
-            document_resolution = bslbf(4)
-            use_xml = bslbf(1)
-            default_version_flag = bslbf(1)
-            independent_flag = bslbf(1)
-            style_for_tv_flag = bslbf(1)
-            reserved_future_use_1 = bslbf(4)
-
-            @case(default_version_flag)
-            class with_default_version(Syntax):
-                bml_major_version = uimsbf(16)
-                bml_minor_version = uimsbf(16)
-
-                @case(lambda self: self.use_xml)
-                class with_xml(Syntax):
-                    bxml_major_version = uimsbf(16)
-                    bxml_minor_version = uimsbf(16)
-
-        @case(lambda self: not self.entry_point_flag)
-        class without_entry_point(Syntax):
-            reserved_future_use_2 = bslbf(5)
-
-        @case(lambda self: self.transmission_format == 0b00)
-        class transmission_00(Syntax):
-            # additional_arib_carousel_info (ARIB-STD-B24-3-C.1
-            data_event_id = uimsbf(4)
-            event_section_flag = bslbf(1)
-            reserved = bslbf(3)
-            ondemand_retrieval_flag = bslbf(1)
-            file_storable_flag = bslbf(1)
-            reserved_future_use_3 = bslbf(6)
-
-        @case(lambda self: self.transmission_format == 0b01)
-        class transmission_01(Syntax):
-            reserved_future_use_4 = bslbf(8)
-
     @case(lambda self: self.data_component_id == 0x08)
     class component_08(Syntax):
         DMF = bslbf(4)
         reserved = bslbf(2)
         timing = bslbf(2)
 
-    @case(lambda self: self.data_component_id not in (0x07, 0x08))
+    @case(lambda self: self.data_component_id not in (0x08,))
     class default_component(Syntax):
         additional_data_component_info = uimsbf(lambda self: self.descriptor_length - 2)
 
@@ -966,7 +996,7 @@ class SystemManagementDescriptor(Descriptor):
 #FIXME: わざわざこの辞書を明示したくない
 tags = {
     #0x05: 登録記述子
-    0x09: CADescriptor,
+    0x09: ConditionalAccessDescriptor,
     0x0D: CopyrightDescriptor,
     #0x13: カルーセル識別記述子
     #0x14: アソシエーションタグ記述子,
@@ -985,9 +1015,10 @@ tags = {
     0x49: CountryAvailabilityDescriptor,
     0x4A: LinkageDescriptor,
     #0x4B: NVOD基準サービス記述子,
-    #0x4C: タイムシフトサービス記述子,
+    0x4C: TimeShiftedServiceDescriptor,
     0x4D: ShortEventDescriptor,
     0x4E: ExtendedEventDescriptor,
+    0x4F: TimeShiftedEventDescriptor,
     0x50: ComponentDescriptor,
     #0x51: モザイク記述子,
     0x52: StreamIdentifierDescriptor,
@@ -997,7 +1028,7 @@ tags = {
     #0x58: ローカル時間オフセット記述子,
     #0x63: パーシャルトランスポートストリーム識別子,
     #0x66: データブロードキャスト識別記述子,
-    #0xC0: 階層伝送記述子,
+    0xC0: HierarchicalTransmissionDescriptor,
     0xC1: DigitalCopyControlDescriptor,
     #0xC2: ネットワーク識別記述子,
     #0xC3: パーシャルトランスポートストリームタイム記述子,
@@ -1019,7 +1050,7 @@ tags = {
     #0xD2: ノード関係記述子,
     #0xD3: 短形式ノード情報記述子,
     #0xD4: STC参照記述子,
-    #0xD5: シリーズ記述子,
+    0xD5: SeriesDescriptor,
     0xD6: EventGroupDescriptor,
     0xD7: SIParameterDescriptor,
     0xD8: BroadcasterNameDescriptor,
@@ -1036,7 +1067,7 @@ tags = {
     #0xF9: 有線TS分割システム記述子,
     0xFA: TerrestrialDeliverySystemDescriptor,
     0xFB: PartialReceptionDescriptor,
-    #0xFC: 緊急情報記述子,
+    0xFC: EmergencyInformationDescriptor,
     0xFD: DataComponentDescriptor,
     0xFE: SystemManagementDescriptor,
 }
