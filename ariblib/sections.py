@@ -340,6 +340,12 @@ class EventInformationSection(Section):
 
     CRC_32 = rpchof(32)
 
+class PresentFollowingEventInformationSection(EventInformationSection):
+
+    """EIT[p/f]"""
+
+    _table_ids = [0x4E, 0x4F]
+
 class ActualStreamEventInformationSection(EventInformationSection):
 
     """自ストリームEIT"""
