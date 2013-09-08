@@ -49,23 +49,22 @@ class Descriptor(Syntax):
         return tags.get(tag, Descriptor)
 
 @tag(0x09)
-class CAIdentifierDescriptor(Descriptor):
+class ConditionalAccessDescriptor(Descriptor):
 
-    """CA識別記述子 (ARIB-STD-B10-2-6.2.2)"""
+    """限定受信方式記述子 (ARIB-TR-B14-4-3.2.2.1, ARIB-TR-B15-4-3.2.2.1)"""
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
-
-    @loop(descriptor_length)
-    class CAs(Syntax):
-        CA_system_id = uimsbf(16)
+    CA_system_ID = uimsbf(16)
+    reserved = bslbf(3)
+    CA_PID = uimsbf(13)
+    private_data_byte = bslbf(lambda self: self.descriptor_length - 4)
 
 @tag(0x0D)
 class CopyrightDescriptor(Descriptor):
 
     """著作権記述子 (ISO 13818-1 2.6.24)"""
 
-    descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     copyright_identifier = uimsbf(32)
     additional_copyright_info = bslbf(lambda self: self.descriptor_length - 4)
@@ -179,6 +178,15 @@ class LinkageDescriptor(Descriptor):
     class default(Syntax):
         private_data_byte = bslbf(lambda self: self.descriptor_length - 7)
 
+@tag(0x4C)
+class TimeShiftedServiceDescriptor(Descriptor):
+
+    """タイムシフトサービス記述子 (ARIB-STD-B10-2-6.2.19)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    reference_service_id = uimsbf(16)
+
 @tag(0x4D)
 class ShortEventDescriptor(Descriptor):
 
@@ -216,6 +224,16 @@ class ExtendedEventDescriptor(Descriptor):
     text_length = uimsbf(8)
     text_char = aribstr(text_length)
 
+@tag(0x4F)
+class TimeShiftedEventDescriptor(Descriptor):
+
+    """タイムシフトイベント記述子 (ARIB-STD-B10-2-6.2.18)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    reference_service_id = uimsbf(16)
+    reference_event_id = uimsbf(16)
+
 @tag(0x50)
 class ComponentDescriptor(Descriptor):
 
@@ -239,6 +257,18 @@ class StreamIdentifierDescriptor(Descriptor):
     descriptor_length = uimsbf(8)
     component_tag = uimsbf(8)
 
+@tag(0x53)
+class CAIdentifierDescriptor(Descriptor):
+
+    """CA識別記述子 (ARIB-STD-B10-2-6.2.2)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+
+    @loop(descriptor_length)
+    class CAs(Syntax):
+        CA_system_id = uimsbf(16)
+
 @tag(0x54)
 class ContentDescriptor(Descriptor):
 
@@ -252,6 +282,18 @@ class ContentDescriptor(Descriptor):
         content_nibble_level_1 = uimsbf(4)
         content_nibble_level_2 = uimsbf(4)
         user_nibble = uimsbf(8)
+
+@tag(0xC0)
+class HierarchicalTransmissionDescriptor(Descriptor):
+
+    """階層伝送記述子 (ARIB-STD-B10-2-6.2.22)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    reserved_future_use_1 = bslbf(7)
+    quality_level = bslbf(1)
+    reserved_future_use_2 = bslbf(3)
+    reference_PID = uimsbf(13)
 
 @tag(0xC1)
 class DigitalCopyControlDescriptor(Descriptor):
@@ -473,17 +515,17 @@ class DownloadContentDescriptor(Descriptor):
             version = uimsbf(16)
             sub_descriptor_count = uimsbf(8)
 
-            @times(sub_descriptor_count)
+            @times(lambda self: self.sub_descriptor_count)
             class sub_descriptors(Syntax):
                 sub_descriptor_type = uimsbf(8)
                 sub_descriptor_length = uimsbf(8)
                 additional_information = uimsbf(sub_descriptor_length)
 
-    @case(module_info_flag)
+    @case(lambda self: self.module_info_flag)
     class ModuleInfo(Syntax):
         num_of_modules = uimsbf(16)
 
-        @times(num_of_modules)
+        @times(lambda self: self.num_of_modules)
         class modules(Syntax):
             module_id = uimsbf(16)
             module_size = uimsbf(32)
@@ -507,6 +549,21 @@ class EncryptDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     encrypt_id = uimsbf(8)
+
+@tag(0xCC)
+class CAServiceDescriptor(Descriptor):
+
+    """CAサービス記述子(ARIB-STD-B25-4.7.3)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    CA_system_id = uimsbf(16)
+    ca_broadcaster_group_id = uimsbf(8)
+    message_control = uimsbf(8)
+
+    @loop(lambda self: self.descriptor_length - 4)
+    class services(Syntax):
+        service_id = uimsbf(16)
 
 @tag(0xCD)
 class TSInformationDescriptor(Descriptor):
@@ -613,6 +670,22 @@ class LogoTransmissionDescriptor(Descriptor):
     class type_else(Syntax):
         reserved_future_use = bslbf(lambda self: self.descriptor_length - 1)
 
+@tag(0xD5)
+class SeriesDescriptor(Descriptor):
+
+    """シリーズ記述子 (ARIB-STD-B10-2-6.2.33)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    series_id = uimsbf(16)
+    repeat_label = uimsbf(4)
+    program_pattern = uimsbf(3)
+    expire_date_valid_flag = uimsbf(1)
+    expire_date = mjd(16)
+    episode_number = uimsbf(12)
+    last_episode_number = uimsbf(12)
+    series_name_char = aribstr(lambda self: self.descriptor_length - 8)
+
 @tag(0xD6)
 class EventGroupDescriptor(Descriptor):
 
@@ -697,7 +770,8 @@ class SIParameterDescriptor(Descriptor):
         @case(lambda self: self.table_id not in(
             0x40, 0x42, 0x46, 0x4E, 0x4F, 0x50, 0x58, 0x60, 0xC3, 0xC4, 0xC8))
         class table_description_else(Syntax):
-            table_description_byte = bslbf(lambda self: self.table_description_length)
+            table_description_byte = bslbf(
+                lambda self: self.table_description_length)
 
 @tag(0xD8)
 class BroadcasterNameDescriptor(Descriptor):
@@ -707,6 +781,69 @@ class BroadcasterNameDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     char = aribstr(descriptor_length)
+
+@tag(0xDA)
+class SIPrimeTSDescriptor(Descriptor):
+
+    """SIプライムTS記述子(ARIB-DTD-B10-2.6.2.38)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    parameter_version = uimsbf(8)
+    update_time = mjd(16)
+    SI_prime_ts_network_id = uimsbf(16)
+    SI_prime_transport_stream_id = uimsbf(16)
+
+    @loop(lambda self: self.descriptor_length - 8)
+    class tables(Syntax):
+        table_id = uimsbf(8)
+        table_description_length = uimsbf(8)
+
+        @case(lambda self: self.table_id in
+            (0x42, 0x46, 0x4E, 0x4F, 0xC5, 0xC6))
+        class table_description_1(Syntax):
+            table_cycle = bslbf(8)
+
+        @case(lambda self: self.table_id in (0x50, 0x60))
+        class table_description_2(Syntax):
+            @loop(lambda self: self.table_description_length)
+            class cycles(Syntax):
+                media_type = uimsbf(2)
+                pattern = uimsbf(2)
+                reserved_1 = bslbf(4)
+                schdule_range = bcd(8)
+                base_cycle = bcd(12)
+                reserved_2 = bslbf(2)
+                cycle_group_count = uimsbf(2)
+
+                @times(cycle_group_count)
+                class groups(Syntax):
+                    num_of_segment = bcd(8)
+                    cycle = bcd(8)
+
+        @case(lambda self: self.table_id not in
+            (0x42, 0x46, 0x4E, 0x4F, 0x50, 0x60, 0xC5, 0xC6))
+        class table_description_else(Syntax):
+            table_description_byte = bslbf(
+                lambda self: self.table_description_length)
+
+@tag(0xDC)
+class LDTLinkageDescriptor(Descriptor):
+
+    """LDTリンク記述子(ARIB-STD-B10-2.6.2.40)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    original_service_id = uimsbf(16)
+    transport_stream_id = uimsbf(16)
+    original_network_id = uimsbf(16)
+
+    @loop(lambda self: self.descriptor_length - 6)
+    class descriptions(Syntax):
+        description_id = uimsbf(16)
+        reserved_future_use = bslbf(4)
+        description_type = uimsbf(4)
+        user_defined = bslbf(8)
 
 @tag(0xDE)
 class ContentAvailabilityDescriptor(Descriptor):
@@ -762,6 +899,27 @@ class PartialReceptionDescriptor(Descriptor):
     class services(Syntax):
         service_id = uimsbf(16)
 
+@tag(0xFC)
+class EmergencyInformationDescriptor(Descriptor):
+
+    """緊急情報記述子(ARIB-STD-B10-2-7.2.24)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+
+    @loop(descriptor_length)
+    class services(Syntax):
+        service_id = uimsbf(16)
+        start_end_flag = bslbf(1)
+        signal_level = bslbf(1)
+        reserved_future_use = bslbf(6)
+        area_code_length = uimsbf(8)
+
+        @loop(lambda self: self.area_code_length)
+        class area_codes(Syntax):
+            area_code = uimsbf(12)
+            reserved_future_use = bslbf(4)
+
 @tag(0xFD)
 class DataComponentDescriptor(Descriptor):
 
@@ -776,56 +934,13 @@ class DataComponentDescriptor(Descriptor):
     descriptor_length = uimsbf(8)
     data_component_id = uimsbf(16)
 
-    @case(lambda self: self.data_component_id == 0x07)
-    class component_07(Syntax):
-        transmission_format = bslbf(2)
-        entry_point_flag = bslbf(1)
-
-        @case(entry_point_flag)
-        class with_entry_point(Syntax):
-            auto_start_flag = bslbf(1)
-            document_resolution = bslbf(4)
-            use_xml = bslbf(1)
-            default_version_flag = bslbf(1)
-            independent_flag = bslbf(1)
-            style_for_tv_flag = bslbf(1)
-            reserved_future_use_1 = bslbf(4)
-
-            @case(default_version_flag)
-            class with_default_version(Syntax):
-                bml_major_version = uimsbf(16)
-                bml_minor_version = uimsbf(16)
-
-                @case(lambda self: self.use_xml)
-                class with_xml(Syntax):
-                    bxml_major_version = uimsbf(16)
-                    bxml_minor_version = uimsbf(16)
-
-        @case(lambda self: not self.entry_point_flag)
-        class without_entry_point(Syntax):
-            reserved_future_use_2 = bslbf(5)
-
-        @case(lambda self: self.transmission_format == 0b00)
-        class transmission_00(Syntax):
-            # additional_arib_carousel_info (ARIB-STD-B24-3-C.1
-            data_event_id = uimsbf(4)
-            event_section_flag = bslbf(1)
-            reserved = bslbf(3)
-            ondemand_retrieval_flag = bslbf(1)
-            file_storable_flag = bslbf(1)
-            reserved_future_use_3 = bslbf(6)
-
-        @case(lambda self: self.transmission_format == 0b01)
-        class transmission_01(Syntax):
-            reserved_future_use_4 = bslbf(8)
-
     @case(lambda self: self.data_component_id == 0x08)
     class component_08(Syntax):
         DMF = bslbf(4)
         reserved = bslbf(2)
         timing = bslbf(2)
 
-    @case(lambda self: self.data_component_id not in (0x07, 0x08))
+    @case(lambda self: self.data_component_id not in (0x08,))
     class default_component(Syntax):
         additional_data_component_info = uimsbf(lambda self: self.descriptor_length - 2)
 
@@ -854,30 +969,23 @@ class SystemManagementDescriptor(Descriptor):
     #0x42: スタッフ記述子,
     #0x44: 優先分配システム記述子,
     #0x4B: NVOD基準サービス記述子,
-    #0x4C: タイムシフトサービス記述子,
     #0x51: モザイク記述子,
-    #0x53: CA識別記述子,
     #0x55: パレンタルレート記述子,
     #0x58: ローカル時間オフセット記述子,
     #0x63: パーシャルトランスポートストリーム識別子,
     #0x66: データブロードキャスト識別記述子,
-    #0xC0: 階層伝送記述子,
     #0xC2: ネットワーク識別記述子,
     #0xC3: パーシャルトランスポートストリームタイム記述子,
     #0xC6: 対象地域記述子,
     #0xCA: CA_EMM_TS記述子,
     #0xCB: CA契約情報記述子,
-    #0xCC: CAサービス記述子,
     #0xD0: 基本ローカルイベント記述子,
     #0xD1: リファレンス記述子,
     #0xD2: ノード関係記述子,
     #0xD3: 短形式ノード情報記述子,
     #0xD4: STC参照記述子,
-    #0xD5: シリーズ記述子,
     #0xD9: コンポーネントグループ記述子,
-    #0xDA: SIプライムTS記述子,
     #0xDB: 掲示板情報記述子,
-    #0xDC: LDTリンク記述子,
     #0xDD: 連結送信記述子,
     #0xE0: サービスグループ記述子,
     #0xF7: カルーセル互換複合記述子,

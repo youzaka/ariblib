@@ -89,8 +89,11 @@ class TransportStreamFile(BufferedReader):
                         section = target_ids[(PID, buffer[0])](buffer[:])
                         yield section
                     try:
-                        next_start = ((buffer[1] & 0x0F) << 8 | buffer[2]) + 3
-                        buffer[:] = buffer[next_start:]
+                        if buffer[0:3] == b'\x00\x00\x01':
+                            break
+                        else:
+                            next_start = ((buffer[1] & 0x0F) << 8 | buffer[2]) + 3
+                            buffer[:] = buffer[next_start:]
                     except (IndexError, AttributeError):
                         break
                 buffer[:] = current

@@ -1,0 +1,23 @@
+#!/usr/bin/env python3.2
+# coding: utf-8
+
+import sys
+from ariblib import tsopen
+from ariblib.sections import *
+
+if len(sys.argv) > 1:
+    source = sys.argv[1]
+else:
+    source = sys.stdin.fileno()
+
+with tsopen(source) as ts:
+    for section in ts.sections(
+        #BroadcasterInformationSection,
+        #EventInformationSection,
+        ServiceDescriptionSection,
+        #NetworkInformationSection,
+        #LinkedDescriptionSection,
+        #SoftwareDownloadTriggerSection
+        ):
+        section.dump()
+

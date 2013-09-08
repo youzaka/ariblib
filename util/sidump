@@ -1,0 +1,22 @@
+#!/usr/bin/env python3.2
+# coding: utf-8
+
+import sys
+from ariblib import tsopen
+from ariblib.sections import *
+
+if len(sys.argv) > 1:
+    source = sys.argv[1]
+else:
+    source = sys.stdin.fileno()
+
+with tsopen(source) as ts:
+    pat = next(ts.sections(ProgramAssociationSection))
+    pat.dump()
+    ProgramMapSection._pids = list(pat.pmt_pids)
+    pmt = next(ts.sections(ProgramMapSection))
+    pmt.dump()
+    nit = next(ts.sections(NetworkInformationSection))
+    nit.dump()
+    cat = next(ts.sections(ConditionalAccessSection))
+    cat.dump()
