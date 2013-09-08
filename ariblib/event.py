@@ -7,10 +7,10 @@ from ariblib.constants import *
 from ariblib.descriptors import *
 from ariblib.sections import ActualStreamEventInformationSection
 
-def events(ts):
+def events(ts, section=ActualStreamEventInformationSection):
     """トランスポートストリームから Event オブジェクトを返すジェネレータ"""
 
-    for eit in ts.sections(ActualStreamEventInformationSection):
+    for eit in ts.sections(section):
         for event in eit.events:
             yield Event(eit, event)
 
