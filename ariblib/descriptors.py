@@ -8,6 +8,14 @@ from ariblib.mnemonics import (aribstr, bcd, bslbf, cache, case, char, loop,
                                mjd, mnemonic, raw, times, uimsbf)
 from ariblib.syntax import Syntax
 
+tags = {}
+def tag(tag_id):
+    def wrapper(cls):
+        cls._tag = tag_id
+        tags[tag_id] = cls
+        return cls
+    return wrapper
+
 class descriptors(mnemonic):
 
     """記述子リスト"""
@@ -40,11 +48,10 @@ class Descriptor(Syntax):
     def get(tag):
         return tags.get(tag, Descriptor)
 
+@tag(0x09)
 class CAIdentifierDescriptor(Descriptor):
 
     """CA識別記述子 (ARIB-STD-B10-2-6.2.2)"""
-
-    _tag = 0x09
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -53,32 +60,29 @@ class CAIdentifierDescriptor(Descriptor):
     class CAs(Syntax):
         CA_system_id = uimsbf(16)
 
+@tag(0x0D)
 class CopyrightDescriptor(Descriptor):
 
     """著作権記述子 (ISO 13818-1 2.6.24)"""
-
-    _tag = 0x0D
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     copyright_identifier = uimsbf(32)
     additional_copyright_info = bslbf(lambda self: self.descriptor_length - 4)
 
+@tag(0x40)
 class NetworkNameDescriptor(Descriptor):
 
     """ネットワーク名記述子(ARIB-STD-B10-2.6.2.11)"""
-
-    _tag = 0x40
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     char = aribstr(descriptor_length)
 
+@tag(0x41)
 class ServiceListDescriptor(Descriptor):
 
     """サービスリスト記述子(ARIB-STD-B10-2-6.2.14)"""
-
-    _tag = 0x41
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -88,11 +92,10 @@ class ServiceListDescriptor(Descriptor):
         service_id = uimsbf(16)
         service_type = uimsbf(8)
 
+@tag(0x43)
 class SatelliteDeliverySystemDescriptor(Descriptor):
 
     """衛星分配システム記述子(ARIB-STD-B10-2-6.2.6)"""
-
-    _tag = 0x43
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -104,21 +107,19 @@ class SatelliteDeliverySystemDescriptor(Descriptor):
     symbol_rate = bcd(28, 5)
     FEC_inner = bslbf(4)
 
+@tag(0x47)
 class BouquetNameDescriptor(Descriptor):
 
     """ブーケ名記述子(ARIB-STD-B10-2.6.2.1)"""
-
-    _tag = 0x47
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     char = aribstr(descriptor_length)
 
+@tag(0x48)
 class ServiceDescriptor(Descriptor):
 
     """サービス記述子(ARIB-STD-B10-2-6.2.13)"""
-
-    _tag = 0x48
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -128,11 +129,10 @@ class ServiceDescriptor(Descriptor):
     service_name_length = uimsbf(8)
     service_name = aribstr(service_name_length)
 
+@tag(0x49)
 class CountryAvailabilityDescriptor(Descriptor):
 
     """国別受信可否記述子(ARIB-STD-B10-2.6.2.5)"""
-
-    _tag = 0x49
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -143,11 +143,10 @@ class CountryAvailabilityDescriptor(Descriptor):
     class countries(Syntax):
         country_code = char(24)
 
+@tag(0x4A)
 class LinkageDescriptor(Descriptor):
 
     """リンク記述子(ARIB-STD-B10-2.6.2.8)"""
-
-    _tag = 0x4A
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -180,11 +179,10 @@ class LinkageDescriptor(Descriptor):
     class default(Syntax):
         private_data_byte = bslbf(lambda self: self.descriptor_length - 7)
 
+@tag(0x4D)
 class ShortEventDescriptor(Descriptor):
 
     """短形式イベント記述子(ARIB-STD-B10-2-6.2.15)"""
-
-    _tag = 0x4D
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -194,11 +192,10 @@ class ShortEventDescriptor(Descriptor):
     text_length = uimsbf(8)
     text_char = aribstr(text_length)
 
+@tag(0x4E)
 class ExtendedEventDescriptor(Descriptor):
 
     """拡張形式イベント記述子(ARIB-STD-B10-2-6.2.7)"""
-
-    _tag = 0x4E
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -219,11 +216,10 @@ class ExtendedEventDescriptor(Descriptor):
     text_length = uimsbf(8)
     text_char = aribstr(text_length)
 
+@tag(0x50)
 class ComponentDescriptor(Descriptor):
 
     """コンポーネント記述子(ARIB-STD-B10-2-6.2.3)"""
-
-    _tag = 0x50
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -234,21 +230,19 @@ class ComponentDescriptor(Descriptor):
     ISO_639_language_code = char(24)
     component_text = aribstr(lambda self: self.descriptor_length - 6)
 
+@tag(0x52)
 class StreamIdentifierDescriptor(Descriptor):
 
     """ストリーム識別記述子 (ARIB-STD-B10-2-6.2.16)"""
-
-    _tag = 0x52
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     component_tag = uimsbf(8)
 
+@tag(0x54)
 class ContentDescriptor(Descriptor):
 
     """コンテント記述子(ARIB-STD-B10-2-6.2.4)"""
-
-    _tag = 0x54
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -259,11 +253,10 @@ class ContentDescriptor(Descriptor):
         content_nibble_level_2 = uimsbf(4)
         user_nibble = uimsbf(8)
 
+@tag(0xC1)
 class DigitalCopyControlDescriptor(Descriptor):
 
     """デジタルコピー制御記述子 (ARIB-STD-B10-2-6.2.23)"""
-
-    _tag = 0xC1
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -300,11 +293,10 @@ class DigitalCopyControlDescriptor(Descriptor):
             class with_maximum_bitrate(Syntax):
                 maximum_bitrate = uimsbf(8)
 
+@tag(0xC4)
 class AudioComponentDescriptor(Descriptor):
 
     """音声コンポーネント記述子(ARIB-STD-B10-2-6.2.26)"""
-
-    _tag = 0xC4
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -330,11 +322,10 @@ class AudioComponentDescriptor(Descriptor):
         if self.ES_multi_lingual_flag == 1
         else self.descriptor_length - 9)
 
+@tag(0xC5)
 class HyperLinkDescriptor(Descriptor):
 
     """ハイパーリンク記述子(ARIB-STD-B10-2.6.2.29)"""
-
-    _tag = 0xC5
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -390,6 +381,7 @@ class HyperLinkDescriptor(Descriptor):
     class type_07(Syntax):
         uri_char = char(lambda self: self.selector_length)
 
+@tag(0xC7)
 class DataContentDescriptor(Descriptor):
 
     """データコンテンツ記述子(ARIB-STD-B10-2-6.2.28)
@@ -398,7 +390,6 @@ class DataContentDescriptor(Descriptor):
     字幕・文字スーパーの識別情報が入っている(ARIB-STD-B24-1-3-9.6.2)
 
     """
-    _tag = 0xC7
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -433,11 +424,10 @@ class DataContentDescriptor(Descriptor):
     text_length = uimsbf(8)
     data_text = aribstr(text_length)
 
+@tag(0xC8)
 class VideoDecodeControlDescriptor(Descriptor):
 
     """ビデオデコードコントロール記述子 (ARIB-STD-B10-2-6.2.30)"""
-
-    _tag = 0xC8
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -446,11 +436,10 @@ class VideoDecodeControlDescriptor(Descriptor):
     video_encode_format = bslbf(4)
     reserved_future_use = bslbf(2)
 
+@tag(0xC9)
 class DownloadContentDescriptor(Descriptor):
 
     """ダウンロードコンテンツ記述子(ARIB-STD-B21-12.2.1.1)"""
-
-    _tag = 0xC9
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -510,21 +499,19 @@ class DownloadContentDescriptor(Descriptor):
         text_length = uimsbf(8)
         text_char = aribstr(text_length)
 
+@tag(0xCB)
 class EncryptDescriptor(Descriptor):
 
     """Encrypt記述子(ARIB-STD-B25-3.4.4.7)"""
-
-    _tag = 0xCB
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     encrypt_id = uimsbf(8)
 
+@tag(0xCD)
 class TSInformationDescriptor(Descriptor):
 
     """TS情報記述子(ARIB-STD-B10-2.6.2.42)"""
-
-    _tag = 0xCD
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -542,11 +529,10 @@ class TSInformationDescriptor(Descriptor):
         class services(Syntax):
             service_id = uimsbf(16)
 
+@tag(0xCE)
 class ExtendedBroadcasterDescriptor(Descriptor):
 
     """拡張ブロードキャスタ記述子(ARIB-STD-B10-2-6.2.43)"""
-
-    _tag = 0xCF
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -597,11 +583,10 @@ class ExtendedBroadcasterDescriptor(Descriptor):
     class type_other(Syntax):
         reserved_future_use = bslbf(lambda self: self.description_length -1)
 
+@tag(0xCF)
 class LogoTransmissionDescriptor(Descriptor):
 
     """ロゴ伝送記述子(ARIB-STD-B10-2-6.2.44)"""
-
-    _tag = 0xCF
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -628,11 +613,10 @@ class LogoTransmissionDescriptor(Descriptor):
     class type_else(Syntax):
         reserved_future_use = bslbf(lambda self: self.descriptor_length - 1)
 
+@tag(0xD6)
 class EventGroupDescriptor(Descriptor):
 
     """イベントグループ記述子 (ARIB-STD-B10-2-6.2.34)"""
-
-    _tag = 0xD6
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -658,11 +642,10 @@ class EventGroupDescriptor(Descriptor):
         private_data_byte = aribstr(lambda self:
             self.descriptor_length - 1 - self.event_count * 4)
 
+@tag(0xD7)
 class SIParameterDescriptor(Descriptor):
 
     """SI伝送パラメータ記述子(ARIB-STD-B10-2-6.2.35)"""
-
-    _tag = 0xD7
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -716,23 +699,19 @@ class SIParameterDescriptor(Descriptor):
         class table_description_else(Syntax):
             table_description_byte = bslbf(lambda self: self.table_description_length)
 
-
+@tag(0xD8)
 class BroadcasterNameDescriptor(Descriptor):
 
     """ブロードキャスタ名記述子(ARIB-STD-B10-2-6.2.36)"""
-
-    _tag = 0xD8
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     char = aribstr(descriptor_length)
 
-
+@tag(0xDE)
 class ContentAvailabilityDescriptor(Descriptor):
 
     """コンテント利用記述子 (ARIB-STD-B10-2-6.2.45)"""
-
-    _tag = 0xDE
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -744,11 +723,10 @@ class ContentAvailabilityDescriptor(Descriptor):
     encryption_mode = bslbf(1)
     reserved_future_use_2 = bslbf(lambda self: self.descriptor_length - 1)
 
+@tag(0xF6)
 class AccessControlDescriptor(Descriptor):
 
     """アクセス制御記述子 (ARIB-TR-B14 第四篇改定案 30.2.2.2"""
-
-    _tag = 0xF6
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -757,11 +735,10 @@ class AccessControlDescriptor(Descriptor):
     PID = uimsbf(13)
     private_data_byte = bslbf(lambda self: self.descriptor_length - 4)
 
+@tag(0xFA)
 class TerrestrialDeliverySystemDescriptor(Descriptor):
 
     """地上分配システム記述子(ARIB-STD-B10-2-6.2.31)"""
-
-    _tag = 0xFA
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -773,11 +750,10 @@ class TerrestrialDeliverySystemDescriptor(Descriptor):
     class freqs(Syntax):
         frequency = uimsbf(16)
 
+@tag(0xFB)
 class PartialReceptionDescriptor(Descriptor):
 
     """部分受信記述子(ARIB-STD-B10-2.6.2.32)"""
-
-    _tag = 0xFB
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -786,6 +762,7 @@ class PartialReceptionDescriptor(Descriptor):
     class services(Syntax):
         service_id = uimsbf(16)
 
+@tag(0xFD)
 class DataComponentDescriptor(Descriptor):
 
     """データ符号化方式記述子(ARIB-STD-B10-2-6.2.20)
@@ -794,8 +771,6 @@ class DataComponentDescriptor(Descriptor):
     字幕・文字スーパーの識別情報が入っている(ARIB-STD-B24-1-3-9.6.1)
 
     """
-
-    _tag = 0xFD
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -854,11 +829,10 @@ class DataComponentDescriptor(Descriptor):
     class default_component(Syntax):
         additional_data_component_info = uimsbf(lambda self: self.descriptor_length - 2)
 
+@tag(0xFE)
 class SystemManagementDescriptor(Descriptor):
 
     """システム管理記述子(ARIB-STD-B10-2-6.2.21, ARIB-TR-B14-30.4.2.2)"""
-
-    _tag = 0xFE
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
@@ -867,11 +841,9 @@ class SystemManagementDescriptor(Descriptor):
     additional_broadcasting_identification = uimsbf(8) # 0x01
     additional_identification_info = uimsbf(lambda self: self.descriptor_length - 2)
 
-#FIXME: わざわざこの辞書を明示したくない
-tags = {
+"""
+未実装の記述子
     #0x05: 登録記述子
-    0x09: CAIdentifierDescriptor,
-    0x0D: CopyrightDescriptor,
     #0x13: カルーセル識別記述子
     #0x14: アソシエーションタグ記述子,
     #0x15: 拡張アソシエーションタグ記述子
@@ -879,69 +851,37 @@ tags = {
     #0x28: AVCビデオ記述子,
     #0x2A: AVCタイミングHRD記述子,
     #0x2E: MPEG-4オーディオ拡張記述子,
-    0x40: NetworkNameDescriptor,
-    0x41: ServiceListDescriptor,
     #0x42: スタッフ記述子,
-    0x43: SatelliteDeliverySystemDescriptor,
     #0x44: 優先分配システム記述子,
-    0x47: BouquetNameDescriptor,
-    0x48: ServiceDescriptor,
-    0x49: CountryAvailabilityDescriptor,
-    0x4A: LinkageDescriptor,
     #0x4B: NVOD基準サービス記述子,
     #0x4C: タイムシフトサービス記述子,
-    0x4D: ShortEventDescriptor,
-    0x4E: ExtendedEventDescriptor,
-    0x50: ComponentDescriptor,
     #0x51: モザイク記述子,
-    0x52: StreamIdentifierDescriptor,
     #0x53: CA識別記述子,
-    0x54: ContentDescriptor,
     #0x55: パレンタルレート記述子,
     #0x58: ローカル時間オフセット記述子,
     #0x63: パーシャルトランスポートストリーム識別子,
     #0x66: データブロードキャスト識別記述子,
     #0xC0: 階層伝送記述子,
-    0xC1: DigitalCopyControlDescriptor,
     #0xC2: ネットワーク識別記述子,
     #0xC3: パーシャルトランスポートストリームタイム記述子,
-    0xC4: AudioComponentDescriptor,
-    0xC5: HyperLinkDescriptor,
     #0xC6: 対象地域記述子,
-    0xC7: DataContentDescriptor,
-    0xC8: VideoDecodeControlDescriptor,
-    0xCB: EncryptDescriptor,
-    0xC9: DownloadContentDescriptor,
     #0xCA: CA_EMM_TS記述子,
     #0xCB: CA契約情報記述子,
     #0xCC: CAサービス記述子,
-    0xCD: TSInformationDescriptor,
-    0xCE: ExtendedBroadcasterDescriptor,
-    0xCF: LogoTransmissionDescriptor,
     #0xD0: 基本ローカルイベント記述子,
     #0xD1: リファレンス記述子,
     #0xD2: ノード関係記述子,
     #0xD3: 短形式ノード情報記述子,
     #0xD4: STC参照記述子,
     #0xD5: シリーズ記述子,
-    0xD6: EventGroupDescriptor,
-    0xD7: SIParameterDescriptor,
-    0xD8: BroadcasterNameDescriptor,
     #0xD9: コンポーネントグループ記述子,
     #0xDA: SIプライムTS記述子,
     #0xDB: 掲示板情報記述子,
     #0xDC: LDTリンク記述子,
     #0xDD: 連結送信記述子,
-    0xDE: ContentAvailabilityDescriptor,
     #0xE0: サービスグループ記述子,
-    0xF6: AccessControlDescriptor,
     #0xF7: カルーセル互換複合記述子,
     #0xF8: 限定再生方式記述子,
     #0xF9: 有線TS分割システム記述子,
-    0xFA: TerrestrialDeliverySystemDescriptor,
-    0xFB: PartialReceptionDescriptor,
     #0xFC: 緊急情報記述子,
-    0xFD: DataComponentDescriptor,
-    0xFE: SystemManagementDescriptor,
-}
-
+"""
