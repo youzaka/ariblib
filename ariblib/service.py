@@ -13,7 +13,7 @@ def services(ts, channel_id=None, single=False, stream=None):
     if channel_id is None:
         get_channel_id = lambda sdt: tsid2channel(sdt.transport_stream_id)
     else:
-        get_channel_id = lambda sdt: channel_id
+        get_channel_id = lambda sdt: str(channel_id)
 
     if stream == 'actual':
         SDT = ActualStreamServiceDescriptionSection
