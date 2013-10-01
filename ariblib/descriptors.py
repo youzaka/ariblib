@@ -6,6 +6,7 @@ from collections import defaultdict
 
 from ariblib.mnemonics import (aribstr, bcd, bslbf, cache, case, char, loop,
                                mjd, mnemonic, raw, times, uimsbf)
+from ariblib.aribstr import AribString
 from ariblib.syntax import Syntax
 
 tags = {}
@@ -223,6 +224,19 @@ class ExtendedEventDescriptor(Descriptor):
 
     text_length = uimsbf(8)
     text_char = aribstr(text_length)
+
+def parse_eeds(eeds):
+    """複数セクションにわかれた拡張形式イベント記述子をパースする"""
+    detail = [('', [])]
+    for eed in eeds:
+        for item in eed.items:
+            key = item.item_description_char
+            # タイトルが空か一つ前と同じ場合は本文を一つ前のものにつなげる
+            if str(key) == '' or str(detail[-1][0]) == str(key):
+                detail[-1][1].extend(item.item_char)
+            else:
+                detail.append((key, item.item_char))
+    return [(str(key), AribString(value)) for key, value in detail[1:]]
 
 @tag(0x4F)
 class TimeShiftedEventDescriptor(Descriptor):
