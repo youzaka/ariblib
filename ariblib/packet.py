@@ -195,7 +195,7 @@ def payload_unit_start_indicator(packet):
     return (packet[1] & 0x40) >> 6
 
 
-def transport_priority(pakcet):
+def transport_priority(packet):
     """パケットの transport_priority を返す"""
     return (packet[1] & 0x20) >> 5
 
