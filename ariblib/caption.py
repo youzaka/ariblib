@@ -7,6 +7,7 @@ from ariblib.drcs import DRCSImage, mapping
 from ariblib.packet import SynchronizedPacketizedElementaryStream
 from ariblib.sections import TimeOffsetSection
 
+
 def captions(ts, color=False):
     """トランスポートストリームから字幕オブジェクトを返すジェネレータ"""
 
@@ -21,7 +22,8 @@ def captions(ts, color=False):
         caption_date = base_time + (spes.pts - base_pcr)
         for data in spes.data_units:
             if data.data_unit_parameter == 0x20:
-                yield Caption(caption_date, CProfileString(data.data_unit_data))
+                yield Caption(caption_date,
+                              CProfileString(data.data_unit_data))
             elif data.data_unit_parameter == 0x30:
                 for code in data.codes:
                     drcs_code = code.character_code & 0xFF
@@ -31,10 +33,12 @@ def captions(ts, color=False):
                         CProfileString.drcs[drcs_code] = image.hash
                         image.save()
 
+
 class Caption(object):
     def __init__(self, datetime, body):
         self.datetime = datetime
         self.body = body
+
 
 class CProfileString(object):
     """CProfile文字列"""
@@ -86,7 +90,8 @@ class CProfileString(object):
                     if self.drcs[char1] in mapping:
                         yield mapping[self.drcs[char1]]
                     else:
-                        yield '{{{{drcs:0x{:02X}:{}}}}}'.format(char1, self.drcs[char1])
+                        yield '{{{{drcs:0x{:02X}:{}}}}}'.format(
+                            char1, self.drcs[char1])
             elif char1 in self.mapping:
                 yield self.mapping[char1]
 
@@ -94,6 +99,7 @@ class CProfileString(object):
         str = ''.join(self).strip()
         self.__str__ = lambda self: str
         return str
+
 
 class ColoredCProfileString(CProfileString):
 
@@ -119,4 +125,3 @@ class ColoredCProfileString(CProfileString):
         str = ''.join(self).strip() + '\033[0m'
         self.__str__ = lambda self: str
         return str
-
