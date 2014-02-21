@@ -58,7 +58,9 @@ class SyntaxType(type):
         instance._conditions = classdict.conditions
         return instance
 
-class Syntax(metaclass=SyntaxType):
+
+class Syntax:
+    __metaclass__ = SyntaxType
 
     """シンタックスの親クラス"""
 
