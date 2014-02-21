@@ -2,10 +2,16 @@
 
 """サービスラッパー"""
 
-from ariblib.descriptors import *
-from ariblib.sections import (ServiceDescriptionSection,
+from ariblib.descriptors import (
+    LogoTransmissionDescriptor,
+    ServiceDescriptor,
+)
+from ariblib.sections import (
     ActualStreamServiceDescriptionSection,
-    OtherStreamServiceDescriptionSection)
+    OtherStreamServiceDescriptionSection,
+    ServiceDescriptionSection,
+)
+
 
 def services(ts, channel_id=None, single=False, stream=None):
     """トランスポートストリームから Service オブジェクトを返すジェネレータ"""
@@ -31,6 +37,7 @@ def services(ts, channel_id=None, single=False, stream=None):
             for service in sdt.services:
                 yield Service(service, get_channel_id(sdt))
 
+
 def parse_tsid(tsid):
     # NHK-BS対応
     if 16625 <= tsid <= 16626:
@@ -42,6 +49,7 @@ def parse_tsid(tsid):
 
     return (network_lower_4bit, new, repeater, slot)
 
+
 def tsid2channel(tsid):
     """transport_stream_id を recpt1 が認識する channel 形式に変える"""
     lower, new, repeater, slot = parse_tsid(tsid)
@@ -52,6 +60,7 @@ def tsid2channel(tsid):
     else:
         return "BS{:02d}_{}".format(repeater, slot)
 
+
 class Service(object):
 
     """サービスラッパークラス"""
@@ -60,8 +69,8 @@ class Service(object):
         self.channel_id = channel_id
         if 'BS' in channel_id:
             self.broadcasting_type = 'BS'
-            self.channel_number = int(channel_id.split('_')[0
-                                      ].replace('BS', ''))
+            self.channel_number =\
+                int(channel_id.split('_')[0].replace('BS', ''))
         elif 'CS' in channel_id:
             self.broadcasting_type = 'CS'
             self.channel_number = int(channel_id.replace('CS', ''))
@@ -83,4 +92,3 @@ class Service(object):
             if ltd.logo_transmission_type == 3:
                 self.logo = ltd.logo_char
                 break
-
