@@ -1,5 +1,3 @@
-#!/usr/bin/env python3.2
-
 """各種 PSI セクションの定義"""
 
 from ariblib.descriptors import (

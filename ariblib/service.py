@@ -1,5 +1,3 @@
-#!/usr/bin/env python3.2
-
 """サービスラッパー"""
 
 from ariblib.descriptors import (

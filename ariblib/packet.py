@@ -1,5 +1,3 @@
-#!/usr/bin/env python3.2
-
 from collections import defaultdict
 from datetime import timedelta
 from io import BufferedReader, FileIO

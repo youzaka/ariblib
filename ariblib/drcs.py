@@ -1,5 +1,3 @@
-#!/usr/bin/env python3.2
-
 from hashlib import md5
 
 try:

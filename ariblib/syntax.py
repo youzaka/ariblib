@@ -1,5 +1,3 @@
-#!/usr/bin/env python3.2
-
 """TSシンタックスの実装"""
 
 from ariblib.mnemonics import case_table, mnemonic

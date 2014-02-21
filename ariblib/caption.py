@@ -1,5 +1,3 @@
-#/usr/bin/env python3.2
-
 """字幕処理関係"""
 
 from ariblib.aribgaiji import GAIJI_MAP
