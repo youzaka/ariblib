@@ -1,20 +1,33 @@
-#!/usr/bin/env python3.2
-
 """記述子の実装"""
 
 from collections import defaultdict
 
-from ariblib.mnemonics import (aribstr, bcd, bslbf, cache, case, char, loop,
-                               mjd, mnemonic, raw, times, uimsbf)
+from ariblib.mnemonics import (
+    aribstr,
+    bcd,
+    bslbf,
+    cache,
+    case,
+    char,
+    loop,
+    mjd,
+    mnemonic,
+    raw,
+    times,
+    uimsbf
+)
 from ariblib.syntax import Syntax
 
 tags = {}
+
+
 def tag(tag_id):
     def wrapper(cls):
         cls._tag = tag_id
         tags[tag_id] = cls
         return cls
     return wrapper
+
 
 class descriptors(mnemonic):
 
@@ -28,13 +41,14 @@ class descriptors(mnemonic):
         result = defaultdict(list)
         while start < end:
             descriptor_tag = instance._packet[start]
-            descriptor_length = instance._packet[start+1] + 2
+            descriptor_length = instance._packet[start + 1] + 2
             block_end = start + descriptor_length
             desc_class = Descriptor.get(descriptor_tag)
             inner = desc_class(instance._packet[start:block_end])
             result[desc_class].append(inner)
             start = block_end
         return result
+
 
 class Descriptor(Syntax):
 
@@ -48,6 +62,7 @@ class Descriptor(Syntax):
     def get(tag):
         return tags.get(tag, Descriptor)
 
+
 @tag(0x09)
 class ConditionalAccessDescriptor(Descriptor):
 
@@ -60,6 +75,7 @@ class ConditionalAccessDescriptor(Descriptor):
     CA_PID = uimsbf(13)
     private_data_byte = bslbf(lambda self: self.descriptor_length - 4)
 
+
 @tag(0x0D)
 class CopyrightDescriptor(Descriptor):
 
@@ -69,6 +85,7 @@ class CopyrightDescriptor(Descriptor):
     copyright_identifier = uimsbf(32)
     additional_copyright_info = bslbf(lambda self: self.descriptor_length - 4)
 
+
 @tag(0x40)
 class NetworkNameDescriptor(Descriptor):
 
@@ -77,6 +94,7 @@ class NetworkNameDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     char = aribstr(descriptor_length)
+
 
 @tag(0x41)
 class ServiceListDescriptor(Descriptor):
@@ -90,6 +108,7 @@ class ServiceListDescriptor(Descriptor):
     class services(Syntax):
         service_id = uimsbf(16)
         service_type = uimsbf(8)
+
 
 @tag(0x43)
 class SatelliteDeliverySystemDescriptor(Descriptor):
@@ -106,6 +125,7 @@ class SatelliteDeliverySystemDescriptor(Descriptor):
     symbol_rate = bcd(28, 5)
     FEC_inner = bslbf(4)
 
+
 @tag(0x47)
 class BouquetNameDescriptor(Descriptor):
 
@@ -114,6 +134,7 @@ class BouquetNameDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     char = aribstr(descriptor_length)
+
 
 @tag(0x48)
 class ServiceDescriptor(Descriptor):
@@ -128,6 +149,7 @@ class ServiceDescriptor(Descriptor):
     service_name_length = uimsbf(8)
     service_name = aribstr(service_name_length)
 
+
 @tag(0x49)
 class CountryAvailabilityDescriptor(Descriptor):
 
@@ -141,6 +163,7 @@ class CountryAvailabilityDescriptor(Descriptor):
     @loop(lambda self: self.descriptor_length - 1)
     class countries(Syntax):
         country_code = char(24)
+
 
 @tag(0x4A)
 class LinkageDescriptor(Descriptor):
@@ -178,6 +201,7 @@ class LinkageDescriptor(Descriptor):
     class default(Syntax):
         private_data_byte = bslbf(lambda self: self.descriptor_length - 7)
 
+
 @tag(0x4C)
 class TimeShiftedServiceDescriptor(Descriptor):
 
@@ -186,6 +210,7 @@ class TimeShiftedServiceDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     reference_service_id = uimsbf(16)
+
 
 @tag(0x4D)
 class ShortEventDescriptor(Descriptor):
@@ -199,6 +224,7 @@ class ShortEventDescriptor(Descriptor):
     event_name_char = aribstr(event_name_length)
     text_length = uimsbf(8)
     text_char = aribstr(text_length)
+
 
 @tag(0x4E)
 class ExtendedEventDescriptor(Descriptor):
@@ -224,6 +250,7 @@ class ExtendedEventDescriptor(Descriptor):
     text_length = uimsbf(8)
     text_char = aribstr(text_length)
 
+
 @tag(0x4F)
 class TimeShiftedEventDescriptor(Descriptor):
 
@@ -233,6 +260,7 @@ class TimeShiftedEventDescriptor(Descriptor):
     descriptor_length = uimsbf(8)
     reference_service_id = uimsbf(16)
     reference_event_id = uimsbf(16)
+
 
 @tag(0x50)
 class ComponentDescriptor(Descriptor):
@@ -248,6 +276,7 @@ class ComponentDescriptor(Descriptor):
     ISO_639_language_code = char(24)
     component_text = aribstr(lambda self: self.descriptor_length - 6)
 
+
 @tag(0x52)
 class StreamIdentifierDescriptor(Descriptor):
 
@@ -256,6 +285,7 @@ class StreamIdentifierDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     component_tag = uimsbf(8)
+
 
 @tag(0x53)
 class CAIdentifierDescriptor(Descriptor):
@@ -268,6 +298,7 @@ class CAIdentifierDescriptor(Descriptor):
     @loop(descriptor_length)
     class CAs(Syntax):
         CA_system_id = uimsbf(16)
+
 
 @tag(0x54)
 class ContentDescriptor(Descriptor):
@@ -283,6 +314,7 @@ class ContentDescriptor(Descriptor):
         content_nibble_level_2 = uimsbf(4)
         user_nibble = uimsbf(8)
 
+
 @tag(0xC0)
 class HierarchicalTransmissionDescriptor(Descriptor):
 
@@ -294,6 +326,7 @@ class HierarchicalTransmissionDescriptor(Descriptor):
     quality_level = bslbf(1)
     reserved_future_use_2 = bslbf(3)
     reference_PID = uimsbf(13)
+
 
 @tag(0xC1)
 class DigitalCopyControlDescriptor(Descriptor):
@@ -335,6 +368,7 @@ class DigitalCopyControlDescriptor(Descriptor):
             class with_maximum_bitrate(Syntax):
                 maximum_bitrate = uimsbf(8)
 
+
 @tag(0xC4)
 class AudioComponentDescriptor(Descriptor):
 
@@ -359,10 +393,12 @@ class AudioComponentDescriptor(Descriptor):
     class with_ES_multi_lingual(Syntax):
         ISO_639_language_code_2 = char(24)
 
-    audio_text = aribstr(lambda self:
+    audio_text = aribstr(lambda self: (
         self.descriptor_length - 12
         if self.ES_multi_lingual_flag == 1
-        else self.descriptor_length - 9)
+        else self.descriptor_length - 9
+    ))
+
 
 @tag(0xC5)
 class HyperLinkDescriptor(Descriptor):
@@ -423,6 +459,7 @@ class HyperLinkDescriptor(Descriptor):
     class type_07(Syntax):
         uri_char = char(lambda self: self.selector_length)
 
+
 @tag(0xC7)
 class DataContentDescriptor(Descriptor):
 
@@ -466,6 +503,7 @@ class DataContentDescriptor(Descriptor):
     text_length = uimsbf(8)
     data_text = aribstr(text_length)
 
+
 @tag(0xC8)
 class VideoDecodeControlDescriptor(Descriptor):
 
@@ -477,6 +515,7 @@ class VideoDecodeControlDescriptor(Descriptor):
     sequence_end_code_flag = bslbf(1)
     video_encode_format = bslbf(4)
     reserved_future_use = bslbf(2)
+
 
 @tag(0xC9)
 class DownloadContentDescriptor(Descriptor):
@@ -541,6 +580,7 @@ class DownloadContentDescriptor(Descriptor):
         text_length = uimsbf(8)
         text_char = aribstr(text_length)
 
+
 @tag(0xCB)
 class EncryptDescriptor(Descriptor):
 
@@ -549,6 +589,7 @@ class EncryptDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     encrypt_id = uimsbf(8)
+
 
 @tag(0xCC)
 class CAServiceDescriptor(Descriptor):
@@ -564,6 +605,7 @@ class CAServiceDescriptor(Descriptor):
     @loop(lambda self: self.descriptor_length - 4)
     class services(Syntax):
         service_id = uimsbf(16)
+
 
 @tag(0xCD)
 class TSInformationDescriptor(Descriptor):
@@ -585,6 +627,7 @@ class TSInformationDescriptor(Descriptor):
         @times(num_of_service)
         class services(Syntax):
             service_id = uimsbf(16)
+
 
 @tag(0xCE)
 class ExtendedBroadcasterDescriptor(Descriptor):
@@ -611,10 +654,12 @@ class ExtendedBroadcasterDescriptor(Descriptor):
             original_network_id = uimsbf(8)
             broadcaster_id = uimsbf(8)
 
-        private_data_byte = bslbf(lambda self:
+        private_data_byte = bslbf(lambda self: (
             self.descriptor_length - (
                 4 + self.number_of_affiliation_id_loop +
-                self.number_of_broadcaster_id_loop * 3))
+                self.number_of_broadcaster_id_loop * 3
+            )
+        ))
 
     @case(lambda self: self.broadcaster_type == 0x2)
     class type_2(Syntax):
@@ -631,14 +676,17 @@ class ExtendedBroadcasterDescriptor(Descriptor):
             original_network_id = uimsbf(8)
             broadcaster_id = uimsbf(8)
 
-        private_data_byte = bslbf(lambda self:
+        private_data_byte = bslbf(lambda self: (
             self.descriptor_length - (
                 4 + self.number_of_sound_broadcast_affiliation_id_loop +
-                self.number_of_broadcaster_id_loop * 3))
+                self.number_of_broadcaster_id_loop * 3
+            )
+        ))
 
     @case(lambda self: self.broadcaster_type not in (0x1, 0x2))
     class type_other(Syntax):
-        reserved_future_use = bslbf(lambda self: self.description_length -1)
+        reserved_future_use = bslbf(lambda self: self.description_length - 1)
+
 
 @tag(0xCF)
 class LogoTransmissionDescriptor(Descriptor):
@@ -670,6 +718,7 @@ class LogoTransmissionDescriptor(Descriptor):
     class type_else(Syntax):
         reserved_future_use = bslbf(lambda self: self.descriptor_length - 1)
 
+
 @tag(0xD5)
 class SeriesDescriptor(Descriptor):
 
@@ -685,6 +734,7 @@ class SeriesDescriptor(Descriptor):
     episode_number = uimsbf(12)
     last_episode_number = uimsbf(12)
     series_name_char = aribstr(lambda self: self.descriptor_length - 8)
+
 
 @tag(0xD6)
 class EventGroupDescriptor(Descriptor):
@@ -712,8 +762,10 @@ class EventGroupDescriptor(Descriptor):
 
     @case(lambda self: self.group_type not in (4, 5))
     class without_network(Syntax):
-        private_data_byte = aribstr(lambda self:
-            self.descriptor_length - 1 - self.event_count * 4)
+        private_data_byte = aribstr(lambda self: (
+            self.descriptor_length - 1 - self.event_count * 4
+        ))
+
 
 @tag(0xD7)
 class SIParameterDescriptor(Descriptor):
@@ -722,7 +774,7 @@ class SIParameterDescriptor(Descriptor):
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
-    parameter_version = uimsbf(8) # 地デジ 0xFF
+    parameter_version = uimsbf(8)  # 地デジ 0xFF
     update_time = mjd(16)
 
     @loop(lambda self: self.descriptor_length - 3)
@@ -731,9 +783,10 @@ class SIParameterDescriptor(Descriptor):
         table_description_length = uimsbf(8)
 
         # ARIB-TR-B14-31.1.2.1, ARIB-TR-B15-31.2.2.1
-        @case(lambda self: self.table_id in
-            (0x40, 0x42, 0x46, 0x4E, 0x4F, 0xC4)
-            and self.table_description_length == 1)
+        @case(lambda self: (
+            self.table_id in (0x40, 0x42, 0x46, 0x4E, 0x4F, 0xC4)
+            and self.table_description_length == 1
+        ))
         class table_description_1_1(Syntax):
             table_cycle = bcd(8)
 
@@ -741,8 +794,10 @@ class SIParameterDescriptor(Descriptor):
         class table_description_1_2(Syntax):
             table_cycle = bcd(16)
 
-        @case(lambda self: self.table_id == 0x4E and
-                           self.table_description_length == 4)
+        @case(lambda self: (
+            self.table_id == 0x4E
+            and self.table_description_length == 4
+        ))
         class table_description_2(Syntax):
             table_cycle_H_EIT_PF = bcd(8)
             table_cycle_M_EIT = bcd(8)
@@ -773,6 +828,7 @@ class SIParameterDescriptor(Descriptor):
             table_description_byte = bslbf(
                 lambda self: self.table_description_length)
 
+
 @tag(0xD8)
 class BroadcasterNameDescriptor(Descriptor):
 
@@ -781,6 +837,7 @@ class BroadcasterNameDescriptor(Descriptor):
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
     char = aribstr(descriptor_length)
+
 
 @tag(0xDA)
 class SIPrimeTSDescriptor(Descriptor):
@@ -799,8 +856,9 @@ class SIPrimeTSDescriptor(Descriptor):
         table_id = uimsbf(8)
         table_description_length = uimsbf(8)
 
-        @case(lambda self: self.table_id in
-            (0x42, 0x46, 0x4E, 0x4F, 0xC5, 0xC6))
+        @case(lambda self: (
+            self.table_id in (0x42, 0x46, 0x4E, 0x4F, 0xC5, 0xC6)
+        ))
         class table_description_1(Syntax):
             table_cycle = bslbf(8)
 
@@ -821,11 +879,15 @@ class SIPrimeTSDescriptor(Descriptor):
                     num_of_segment = bcd(8)
                     cycle = bcd(8)
 
-        @case(lambda self: self.table_id not in
-            (0x42, 0x46, 0x4E, 0x4F, 0x50, 0x60, 0xC5, 0xC6))
+        @case(lambda self: (
+            self.table_id not in (
+                0x42, 0x46, 0x4E, 0x4F, 0x50, 0x60, 0xC5, 0xC6
+            )
+        ))
         class table_description_else(Syntax):
             table_description_byte = bslbf(
                 lambda self: self.table_description_length)
+
 
 @tag(0xDC)
 class LDTLinkageDescriptor(Descriptor):
@@ -845,6 +907,7 @@ class LDTLinkageDescriptor(Descriptor):
         description_type = uimsbf(4)
         user_defined = bslbf(8)
 
+
 @tag(0xDE)
 class ContentAvailabilityDescriptor(Descriptor):
 
@@ -860,6 +923,7 @@ class ContentAvailabilityDescriptor(Descriptor):
     encryption_mode = bslbf(1)
     reserved_future_use_2 = bslbf(lambda self: self.descriptor_length - 1)
 
+
 @tag(0xF6)
 class AccessControlDescriptor(Descriptor):
 
@@ -871,6 +935,7 @@ class AccessControlDescriptor(Descriptor):
     transmission_type = bslbf(3)
     PID = uimsbf(13)
     private_data_byte = bslbf(lambda self: self.descriptor_length - 4)
+
 
 @tag(0xFA)
 class TerrestrialDeliverySystemDescriptor(Descriptor):
@@ -887,6 +952,7 @@ class TerrestrialDeliverySystemDescriptor(Descriptor):
     class freqs(Syntax):
         frequency = uimsbf(16)
 
+
 @tag(0xFB)
 class PartialReceptionDescriptor(Descriptor):
 
@@ -898,6 +964,7 @@ class PartialReceptionDescriptor(Descriptor):
     @loop(descriptor_length)
     class services(Syntax):
         service_id = uimsbf(16)
+
 
 @tag(0xFC)
 class EmergencyInformationDescriptor(Descriptor):
@@ -919,6 +986,7 @@ class EmergencyInformationDescriptor(Descriptor):
         class area_codes(Syntax):
             area_code = uimsbf(12)
             reserved_future_use = bslbf(4)
+
 
 @tag(0xFD)
 class DataComponentDescriptor(Descriptor):
@@ -942,7 +1010,9 @@ class DataComponentDescriptor(Descriptor):
 
     @case(lambda self: self.data_component_id not in (0x08,))
     class default_component(Syntax):
-        additional_data_component_info = uimsbf(lambda self: self.descriptor_length - 2)
+        additional_data_component_info =\
+            uimsbf(lambda self: self.descriptor_length - 2)
+
 
 @tag(0xFE)
 class SystemManagementDescriptor(Descriptor):
@@ -951,10 +1021,11 @@ class SystemManagementDescriptor(Descriptor):
 
     descriptor_tag = uimsbf(8)
     descriptor_length = uimsbf(8)
-    broadcasting_flag = uimsbf(2) # 放送 0x00
-    broadcasting_identifier = uimsbf(6) # 地デジ 0x03, BS 0x02, CS 0x04
-    additional_broadcasting_identification = uimsbf(8) # 0x01
-    additional_identification_info = uimsbf(lambda self: self.descriptor_length - 2)
+    broadcasting_flag = uimsbf(2)  # 放送 0x00
+    broadcasting_identifier = uimsbf(6)  # 地デジ 0x03, BS 0x02, CS 0x04
+    additional_broadcasting_identification = uimsbf(8)  # 0x01
+    additional_identification_info =\
+        uimsbf(lambda self: self.descriptor_length - 2)
 
 """
 未実装の記述子

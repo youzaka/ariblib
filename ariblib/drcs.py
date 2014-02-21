@@ -33,6 +33,7 @@ for path in (mapping_path, user_mapping_path):
     except IOError:
         pass
 
+
 class DRCSImage(object):
 
     """DRCSの画像イメージ"""
@@ -47,8 +48,10 @@ class DRCSImage(object):
         for y, pattern in enumerate(patterns):
             pattern_data = pattern.pattern_data
             hasher.update(pattern_data)
-            points = [(x, y) for x, dot in enumerate(_to_bit(pattern_data))
-                             if dot == '1']
+            points = [
+                (x, y)
+                for x, dot in enumerate(_to_bit(pattern_data)) if dot == '1'
+            ]
             draw.point(points, color)
         self.hash = hasher.hexdigest()
 
@@ -58,6 +61,7 @@ class DRCSImage(object):
                 raise ValueError('画像イメージが作成されていません')
             path = self.hash
         self.image.save(os.path.join(save_dir, path + '.' + ext))
+
 
 class DRCSText(object):
 
@@ -84,6 +88,7 @@ class DRCSText(object):
         with open(os.path.join(save_dir, path + '.' + ext), 'w') as out:
             out.write('\n'.join(self.dots))
 
+
 def _to_bit(raw):
     """bytearrayを0,1のビットを表す文字列に変換する"""
 
@@ -92,4 +97,3 @@ def _to_bit(raw):
 # 画像出力ができないときはテキスト出力を行う
 if text_output:
     DRCSImage = DRCSText
-
