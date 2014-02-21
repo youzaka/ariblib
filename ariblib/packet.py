@@ -5,8 +5,17 @@ from datetime import timedelta
 from io import BufferedReader, FileIO
 from itertools import chain
 
-from ariblib.mnemonics import (bcdtime, bslbf, case, char, loop, otm, raw, times,
-                               uimsbf)
+from ariblib.mnemonics import (
+    bcdtime,
+    bslbf,
+    case,
+    char,
+    loop,
+    otm,
+    raw,
+    times,
+    uimsbf,
+)
 from ariblib.syntax import Syntax
 from ariblib.sections import Section
 
@@ -16,6 +25,7 @@ from ariblib.sections import Section
 188バイトずつの各パケットを class として実装するとかなり遅くなるので、
 パケットについては bytearray のまま受け渡して、関数で適宜対応することにした。
 """
+
 
 class TransportStreamFile(BufferedReader):
 
@@ -34,8 +44,10 @@ class TransportStreamFile(BufferedReader):
         buffer_size = packet_size * chunk_size
         packets = iter(lambda: self.read(buffer_size), b'')
         for packet in packets:
-            for start, stop in zip(range(0, buffer_size - packet_size + 1, packet_size),
-                                   range(packet_size, buffer_size + 1, packet_size)):
+            for start, stop in zip(
+                range(0, buffer_size - packet_size + 1, packet_size),
+                range(packet_size, buffer_size + 1, packet_size)
+            ):
                 next = packet[start:stop]
                 if not next:
                     raise StopIteration
@@ -64,7 +76,8 @@ class TransportStreamFile(BufferedReader):
 
         buf = defaultdict(bytearray)
 
-        target_pids = set(chain.from_iterable(Section._pids for Section in Sections))
+        target_pids =\
+            set(chain.from_iterable(Section._pids for Section in Sections))
         table_map = defaultdict(set)
         target_ids = dict()
         for Section in Sections:
@@ -92,7 +105,8 @@ class TransportStreamFile(BufferedReader):
                         if buffer[0:3] == b'\x00\x00\x01':
                             break
                         else:
-                            next_start = ((buffer[1] & 0x0F) << 8 | buffer[2]) + 3
+                            next_start =\
+                                ((buffer[1] & 0x0F) << 8 | buffer[2]) + 3
                             buffer[:] = buffer[next_start:]
                     except (IndexError, AttributeError):
                         break
@@ -117,7 +131,10 @@ class TransportStreamFile(BufferedReader):
         FIXME: 2か国語対応の場合複数の PID で字幕が提供されているかも? (未確認)
         """
 
-        from ariblib.sections import ProgramAssociationSection, ProgramMapSection
+        from ariblib.sections import (
+            ProgramAssociationSection,
+            ProgramMapSection,
+        )
         from ariblib.descriptors import StreamIdentifierDescriptor
 
         pat = next(self.sections(ProgramAssociationSection))
@@ -126,21 +143,26 @@ class TransportStreamFile(BufferedReader):
             for tsmap in pmt.maps:
                 if tsmap.stream_type != 0x06:
                     continue
-                for si in tsmap.descriptors.get(StreamIdentifierDescriptor, []):
+                for si in tsmap.descriptors.get(StreamIdentifierDescriptor,
+                                                []):
                     if si.component_tag == 0x87:
                         return tsmap.elementary_PID
 
     def get_video_pid(self, video_encode_format):
         """指定のエンコードフォーマットの動画PIDを返す"""
 
-        from ariblib.sections import ProgramAssociationSection, ProgramMapSection
+        from ariblib.sections import (
+            ProgramAssociationSection,
+            ProgramMapSection,
+        )
         from ariblib.descriptors import VideoDecodeControlDescriptor
 
         pat = next(self.sections(ProgramAssociationSection))
         ProgramMapSection._pids = list(pat.pmt_pids)
         for pmt in self.sections(ProgramMapSection):
             for tsmap in pmt.maps:
-                for vdc in tsmap.descriptors.get(VideoDecodeControlDescriptor, []):
+                for vdc in tsmap.descriptors.get(VideoDecodeControlDescriptor,
+                                                 []):
                     if vdc.video_encode_format == video_encode_format:
                         return tsmap.elementary_PID
 
@@ -155,42 +177,52 @@ class TransportStreamFile(BufferedReader):
                 pcr = ((packet[6] << 25) | (packet[7] << 17) |
                        (packet[8] << 9) | (packet[9] << 1) |
                        ((packet[10] & 0x80) >> 7))
-                yield timedelta(seconds=pcr/90000)
+                yield timedelta(seconds=pcr / 90000)
+
 
 def tsopen(path, chunk=10000):
     """TransportStreamFileオブジェクトを返すラッパー関数"""
     return TransportStreamFile(path, chunk)
 
+
 def transport_error_indicator(packet):
     """パケットの transport_error_indocator を返す"""
     return (packet[1] & 0x80) >> 7
+
 
 def payload_unit_start_indicator(packet):
     """パケットの payload_unit_start_indicator を返す"""
     return (packet[1] & 0x40) >> 6
 
+
 def transport_priority(pakcet):
     """パケットの transport_priority を返す"""
     return (packet[1] & 0x20) >> 5
+
 
 def pid(packet):
     """パケットの pid を返す"""
     return ((packet[1] & 0x1F) << 8) | packet[2]
 
+
 def transport_scrambling_control(packet):
     return (packet[3] & 0xC0) >> 6
+
 
 def has_adaptation(packet):
     """このパケットが adaptation field を持っているかどうかを返す"""
     return (packet[3] & 0x20) >> 5
 
+
 def has_payload(packet):
     """このパケットが payload を持っているかどうかを返す"""
     return (packet[3] & 0x10) >> 4
 
+
 def continuity_counter(packet):
     """このパケットの continuity_counter を返す"""
     return packet[3] & 0x0F
+
 
 def adaptation_field(packet):
     """パケットから adaptaton field 部分を返す"""
@@ -202,6 +234,7 @@ def adaptation_field(packet):
     adaptation_length = packet[start]
     end = start + adaptation_length + 1
     return AdaptationField(packet[start:end])
+
 
 def payload(packet):
     """パケットから payload 部分を返す
@@ -225,7 +258,7 @@ def payload(packet):
     if not payload_unit_start_indicator(packet):
         return (b'', packet[start:])
 
-    packet_start_code_prefix = packet[start:start+3]
+    packet_start_code_prefix = packet[start:start + 3]
     if packet_start_code_prefix == b'\x00\x00\x01':
         return (b'', packet[start:])
 
@@ -233,6 +266,7 @@ def payload(packet):
     prev_start = start + 1
     start += 1 + pointer
     return (packet[prev_start:start], packet[start:])
+
 
 class AdaptationField(Syntax):
 
@@ -262,12 +296,13 @@ class AdaptationField(Syntax):
 
     @case(splicing_point_flag)
     class with_splicing(Syntax):
-        splice_countdown = uimsbf(8) #tcimsbf
+        splice_countdown = uimsbf(8)  # tcimsbf
 
     @case(transport_private_data_flag)
     class with_transport_private_data(Syntax):
         transport_private_data_length = uimsbf(8)
         private_data_byte = bslbf(transport_private_data_length)
+
 
 class SynchronizedPacketizedElementaryStream(Section):
 
@@ -411,6 +446,6 @@ class SynchronizedPacketizedElementaryStream(Section):
 
         return self.PES_packet_length <= len(self) + 3
 
+
 def raw_dump(packet):
     return ' '.join(map(lambda s: format(s, '02X'), packet))
-
