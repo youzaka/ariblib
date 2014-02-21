@@ -5,6 +5,7 @@
 from ariblib.descriptors import (
     descriptors,
     ExtendedEventDescriptor,
+    StreamIdentifierDescriptor,
 )
 from ariblib.mnemonics import (
     bcdtime,
