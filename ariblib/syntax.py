@@ -59,8 +59,7 @@ class SyntaxType(type):
         return instance
 
 
-class Syntax:
-    __metaclass__ = SyntaxType
+class Syntax(metaclass=SyntaxType):
 
     """シンタックスの親クラス"""
 
