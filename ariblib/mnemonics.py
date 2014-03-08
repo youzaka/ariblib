@@ -1,5 +1,3 @@
-#!/usr/bin/env python3.2
-
 """ビット列表記の実装
 仕様書ではビット列表記は全て小文字になっているので、ここで実装するクラスも全て小文字とする
 """
@@ -13,8 +11,10 @@ try:
     callable
 except NameError:
     from types import FunctionType
+
     def callable(function):
         return function.__class__ is FunctionType
+
 
 def meta_cache(suffix):
     """real_length, real_count用のキャッシュデコレータ"""
@@ -31,6 +31,7 @@ def meta_cache(suffix):
         return cached
     return cache
 
+
 def cache(func):
     """ビット列キャッシュデコレータ"""
 
@@ -39,6 +40,7 @@ def cache(func):
         setattr(instance, self.name, result)
         return result
     return cached
+
 
 class mnemonic(object):
 
@@ -67,6 +69,7 @@ class mnemonic(object):
             return getattr(instance, self.length) * 8
         return self.length
 
+
 class uimsbf(mnemonic):
 
     """unsigned integer most significant bit first[符号無し整数、最上位ビットが先頭]"""
@@ -93,17 +96,20 @@ class uimsbf(mnemonic):
         return (uimsbf.uimsbf(packet, index, pos) << (length - pos) |
                 uimsbf.uimsbf(packet, index + pos, length - pos))
 
+
 class bslbf(uimsbf):
 
     """bit string,left bit first[ビット列、左ビットが先頭]
 
     実質 uimsbf と同じ処理をすればよい。"""
 
+
 class rpchof(uimsbf):
 
     """remainder polynominal coefficients, highest order first[多項式係数の剰余、最上位階数が先頭]
 
     正しい CRC の値かどうか検証する必要があるが、とりあえず uimsbf と同じ処理とする。"""
+
 
 class mjd(mnemonic):
 
@@ -118,6 +124,7 @@ class mjd(mnemonic):
         if pmjd == bytearray(b'\xff\xff\xff\xff\xff'):
             return None
         return datetime(*mjd2datetime(pmjd))
+
 
 class bcd(mnemonic):
 
@@ -137,6 +144,7 @@ class bcd(mnemonic):
         value = reduce(lambda x, y: x * 100 + y, int_values)
         return value / (10 ** self.decimal_point)
 
+
 class bcdtime(mnemonic):
 
     """二進化十進数で表現された時分秒"""
@@ -152,6 +160,7 @@ class bcdtime(mnemonic):
         hour, minute, second = map(bcd2int, bcd)
         return timedelta(hours=hour, minutes=minute, seconds=second)
 
+
 class otm(mnemonic):
 
     """オフセット時刻。二進化十進数で表現された時・分・秒・ミリ秒"""
@@ -163,11 +172,15 @@ class otm(mnemonic):
         last = block + 3
         bcd = map(ord, instance._packet[block:last])
         msec = map(ord, instance._packet[last:])
-        millisecond = ((msec[0] & 0xF0) >> 4) * 100 + (
-                       (msec[0] & 0x0F) * 10) + ((msec[1] & 0x0F) >> 4)
+        millisecond = (
+            ((msec[0] & 0xF0) >> 4) * 100 +
+            ((msec[0] & 0x0F) * 10) +
+            ((msec[1] & 0x0F) >> 4)
+        )
         hour, minute, second = map(bcd2int, bcd)
         return timedelta(hours=hour, minutes=minute, seconds=second,
                          microseconds=millisecond)
+
 
 class aribstr(mnemonic):
 
@@ -181,6 +194,7 @@ class aribstr(mnemonic):
         binary = bytearray(instance._packet[block:last])
         return AribString(binary)
 
+
 class char(mnemonic):
 
     """ISO 8859-1に従って8ビットで符号化された文字列"""
@@ -191,6 +205,7 @@ class char(mnemonic):
         block = start // 8
         last = block + self.real_length(instance) // 8
         return ''.join(map(chr, instance._packet[block:last]))
+
 
 class cp932(mnemonic):
 
@@ -203,6 +218,7 @@ class cp932(mnemonic):
         last = block + self.real_length(instance) // 8
         return unicode(char(instance._packet, size, cur), 'CP932')
 
+
 class raw(mnemonic):
     """アレイそのまま"""
 
@@ -212,6 +228,7 @@ class raw(mnemonic):
         block = start // 8
         last = block + self.real_length(instance) // 8
         return instance._packet[block:last]
+
 
 class fixed_size_loop(mnemonic):
 
@@ -233,6 +250,7 @@ class fixed_size_loop(mnemonic):
             result.append(obj)
             start += len(obj) // 8
         return result
+
 
 class fixed_count_loop(mnemonic):
 
@@ -270,7 +288,8 @@ class fixed_count_loop(mnemonic):
     def real_length(self, instance):
         return sum(mnemonic.real_length(sub)
                    for sub in getattr(instance, self.name)
-                       for mnemonic in sub._mnemonics)
+                   for mnemonic in sub._mnemonics)
+
 
 class case_table(mnemonic):
 
@@ -300,13 +319,16 @@ class case_table(mnemonic):
                        for mnemonic in self.cls._mnemonics)
         return 0
 
+
 def bindump(target):
     """バイナリダンプ"""
     return ' '.join(map(lambda x: format(x, '08b'), target))
 
+
 def hexdump(target):
     """16進ダンプ"""
     return ' '.join(map(lambda x: format(x, '02X'), target))
+
 
 def mjd2datetime(pmjd):
     """mjdを年月日時分秒のタプルとして返す
@@ -325,24 +347,26 @@ def mjd2datetime(pmjd):
     month = mm_ - 1 - k * 12
     return (year, month, day) + tuple(map(bcd2int, bcd))
 
+
 def bcd2int(bcd):
     """bcdを10進数にする"""
 
     return ((bcd & 0xF0) >> 4) * 10 + (bcd & 0x0F)
+
 
 def loop(length):
     """サイズ固定のサブシンタックスを返すデコレータ"""
 
     return lambda cls: fixed_size_loop(cls, length)
 
+
 def times(count):
     """回数固定のサブシンタックスを返すデコレータ"""
 
     return lambda cls: fixed_count_loop(cls, count)
 
+
 def case(condition):
     """ifセクションを返すデコレータ"""
 
     return lambda cls: case_table(cls, condition)
-
-

@@ -1,6 +1,29 @@
-#!/usr/bin/env python3.2
 """セクションとテーブルの違いがわからない頃の実装の後方互換"""
-from ariblib.sections import *
+
+from ariblib.sections import (
+    Section,
+    ProgramAssociationSection,
+    ProgramMapSection,
+    ConditionalAccessSection,
+    NetworkInformationSection,
+    ServiceDescriptionSection,
+    BouquetAssociationSection,
+    EventInformationSection,
+    RunningStatusSection,
+    TimeAndDateSection,
+    TimeOffsetSection,
+    LocalEventInformationSection,
+    EventRelationSection,
+    IndexTransmissionSection,
+    PartialContentAnnouncementSection,
+    StuffingSection,
+    BroadcasterInformationSection,
+    NetworkBoardInformationSection,
+    CommonDataSection,
+    LinkedDescriptionSection,
+    SoftwareDownloadTriggerSection,
+    DSMCCSection,
+)
 
 Table = Section
 ProgramAssociationTable = ProgramAssociationSection
@@ -23,6 +46,4 @@ NetworkBoardInformationTable = NetworkBoardInformationSection
 CommonDataTable = CommonDataSection
 LinkedDescriptionTable = LinkedDescriptionSection
 SoftwareDownloadTriggerTable = SoftwareDownloadTriggerSection
-CommonDataTable = CommonDataSection
 DSMCCTable = DSMCCSection
-

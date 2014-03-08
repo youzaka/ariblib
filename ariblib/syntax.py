@@ -1,8 +1,7 @@
-#!/usr/bin/env python3.2
-
 """TSシンタックスの実装"""
 
 from ariblib.mnemonics import case_table, mnemonic
+
 
 class SyntaxDict(dict):
 
@@ -31,9 +30,13 @@ class SyntaxDict(dict):
 
     def get_start(self):
         mnemonics = self.mnemonics[:]
+
         def start(instance):
-            return sum(m.real_length(instance) for m in mnemonics) + instance._pos
+            return sum(m.real_length(instance) for m in mnemonics) +\
+                instance._pos
+
         return start
+
 
 class SyntaxType(type):
 
@@ -53,7 +56,9 @@ class SyntaxType(type):
         instance._conditions = classdict.conditions
         return instance
 
-class Syntax(metaclass=SyntaxType):
+
+class Syntax:
+    __metaclass__ = SyntaxType
 
     """シンタックスの親クラス"""
 
@@ -82,8 +87,10 @@ class Syntax(metaclass=SyntaxType):
                 pass
 
         # 親が与えられている場合は親のプロパティも参照する
-        if (self._parent and
-            any(mnemonic.name == name for mnemonic in self._parent._mnemonics)):
+        if (
+            self._parent and
+            any(mnemonic.name == name for mnemonic in self._parent._mnemonics)
+        ):
             return getattr(self._parent, name)
 
     def get_names(self):
@@ -134,6 +141,7 @@ class Syntax(metaclass=SyntaxType):
         """
 
         self.descriptor_name = descriptor_name
+
         def attach_callback(callback):
             self._callbacks[Descriptor] = callback
         return attach_callback
@@ -142,7 +150,8 @@ class Syntax(metaclass=SyntaxType):
         """指定された記述子がyieldされるごとにコールバック関数を実行する"""
         from ariblib.descriptors import ExtendedEventDescriptor
 
-        for descriptor_type, descriptors in getattr(self, self.descriptor_name).items():
+        for descriptor_type, descriptors in\
+                getattr(self, self.descriptor_name).items():
             if descriptor_type not in self._callbacks:
                 continue
 
@@ -153,4 +162,3 @@ class Syntax(metaclass=SyntaxType):
             else:
                 for descriptor in descriptors:
                     callback(descriptor)
-

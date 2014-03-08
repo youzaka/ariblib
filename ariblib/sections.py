@@ -1,14 +1,22 @@
-#!/usr/bin/env python3.2
-
 """各種 PSI セクションの定義"""
 
-from collections import defaultdict
-from datetime import datetime, timedelta
-
-from ariblib.aribstr import AribString
-from ariblib.descriptors import descriptors, ExtendedEventDescriptor
-from ariblib.mnemonics import bcdtime, bslbf, loop, raw, rpchof, mjd, times, uimsbf
+from ariblib.descriptors import (
+    descriptors,
+    ExtendedEventDescriptor,
+    StreamIdentifierDescriptor,
+)
+from ariblib.mnemonics import (
+    bcdtime,
+    bslbf,
+    loop,
+    raw,
+    rpchof,
+    mjd,
+    times,
+    uimsbf,
+)
 from ariblib.syntax import Syntax
+
 
 class Section(Syntax):
 
@@ -61,6 +69,7 @@ class Section(Syntax):
                 for descriptor in descriptors:
                     self.callbacks[Descriptor](descriptor)
 
+
 class ProgramAssociationSection(Section):
 
     """Program Association Section PAT (ISO 13818-1 2.4.4.3)"""
@@ -101,6 +110,7 @@ class ProgramAssociationSection(Section):
         for pid in self.pids:
             if pid.program_number:
                 yield pid.program_map_PID
+
 
 class ProgramMapSection(Section):
 
@@ -147,9 +157,8 @@ class ProgramMapSection(Section):
         """
         for stream in self.maps:
             try:
-                if (stream.stream_type == 0x06 and
-                    stream.descriptors[StreamIdentifierDescriptor
-                        ][0].component_tag == 0x87):
+                if stream.stream_type == 0x06 and\
+                        stream.descriptors[StreamIdentifierDescriptor][0].component_tag == 0x87:
                     return stream.elementary_PID
             except KeyError:
                 pass
@@ -170,6 +179,7 @@ class ProgramMapSection(Section):
             if stream.stream_type in audio_types:
                 yield stream.elementary_PID
 
+
 class ConditionalAccessSection(Section):
 
     """限定受信セクション CAT (ISO 13818-1 2.4.4.6)"""
@@ -189,6 +199,7 @@ class ConditionalAccessSection(Section):
     last_section_number = uimsbf(8)
     descriptors = descriptors(lambda self: self.section_length - 9)
     CRC_32 = rpchof(32)
+
 
 class NetworkInformationSection(Section):
 
@@ -223,6 +234,7 @@ class NetworkInformationSection(Section):
         descriptors = descriptors(transport_descriptors_length)
 
     CRC_32 = rpchof(32)
+
 
 class ServiceDescriptionSection(Section):
 
@@ -259,17 +271,20 @@ class ServiceDescriptionSection(Section):
 
     CRC_32 = rpchof(32)
 
+
 class ActualStreamServiceDescriptionSection(ServiceDescriptionSection):
 
     """自ストリームSDT"""
 
     _table_ids = [0x42]
 
+
 class OtherStreamServiceDescriptionSection(ServiceDescriptionSection):
 
     """他ストリームSDT"""
 
     _tale_ids = [0x46]
+
 
 class BouquetAssociationSection(Section):
 
@@ -304,6 +319,7 @@ class BouquetAssociationSection(Section):
         descriptors = descriptors(transport_descriptors_length)
 
     CRC_32 = rpchof(32)
+
 
 class EventInformationSection(Section):
 
@@ -340,11 +356,13 @@ class EventInformationSection(Section):
 
     CRC_32 = rpchof(32)
 
+
 class PresentFollowingEventInformationSection(EventInformationSection):
 
     """EIT[p/f]"""
 
     _table_ids = [0x4E, 0x4F]
+
 
 class ActualStreamEventInformationSection(EventInformationSection):
 
@@ -352,12 +370,15 @@ class ActualStreamEventInformationSection(EventInformationSection):
 
     _table_ids = range(0x50, 0x60)
 
+
 class ActualStreamPresentFollowingEventInformationSection(
-    ActualStreamEventInformationSection):
+    ActualStreamEventInformationSection
+):
 
     """自ストリームEIT[p/f]"""
 
     _table_ids = [0x4E]
+
 
 class OtherStreamEventInformationSection(EventInformationSection):
 
@@ -365,12 +386,15 @@ class OtherStreamEventInformationSection(EventInformationSection):
 
     _table_ids = range(0x60, 0x70)
 
+
 class OtherStreamPresentFollowingEventInformationSection(
-    OtherStreamEventInformationSection):
+    OtherStreamEventInformationSection
+):
 
     """他ストリームEIT[p/f]"""
 
     _table_ids = [0x4F]
+
 
 class RunningStatusSection(Section):
 
@@ -394,6 +418,7 @@ class RunningStatusSection(Section):
         reserved_future_use = bslbf(5)
         running_status = uimsbf(3)
 
+
 class TimeAndDateSection(Section):
 
     """時刻日付セクション TDT (ARIB-STD-B10-2-5.2.8)"""
@@ -407,6 +432,7 @@ class TimeAndDateSection(Section):
     reserved = bslbf(2)
     section_length = uimsbf(12)
     JST_time = mjd(40)
+
 
 class TimeOffsetSection(Section):
 
@@ -425,6 +451,7 @@ class TimeOffsetSection(Section):
     descriptors_loop_length = uimsbf(12)
     descriptors = descriptors(descriptors_loop_length)
     CRC_32 = rpchof(32)
+
 
 class LocalEventInformationSection(Section):
 
@@ -456,6 +483,7 @@ class LocalEventInformationSection(Section):
         descriptors = descriptors(descriptors_loop_length)
 
     CRC_32 = rpchof(32)
+
 
 class EventRelationSection(Section):
 
@@ -492,6 +520,7 @@ class EventRelationSection(Section):
 
     CRC_32 = rpchof(32)
 
+
 class IndexTransmissionSection(Section):
 
     """番組インデックス送出情報セクション ITT (ARIB-STD-B10-2-5.1.3)"""
@@ -513,6 +542,7 @@ class IndexTransmissionSection(Section):
     descriptors_loop_length = uimsbf(12)
     descriptors = descriptors(descriptors_loop_length)
     CRC_32 = rpchof(32)
+
 
 class PartialContentAnnouncementSection(Section):
 
@@ -549,6 +579,7 @@ class PartialContentAnnouncementSection(Section):
 
     CRC_32 = rpchof(32)
 
+
 class StuffingSection(Section):
 
     """スタッフセクション ST (ARIB-STD-B10-2.5.2.11)"""
@@ -564,6 +595,7 @@ class StuffingSection(Section):
     @loop(section_length)
     class data(Syntax):
         data_byte = uimsbf(8)
+
 
 class BroadcasterInformationSection(Section):
 
@@ -588,8 +620,9 @@ class BroadcasterInformationSection(Section):
     first_descriptors_length = uimsbf(12)
     descriptors = descriptors(first_descriptors_length)
 
-    @loop(lambda self: self.section_length - (
-            self.first_descriptors_length + 11))
+    @loop(lambda self: (
+        self.section_length - (self.first_descriptors_length + 11)
+    ))
     class broadcasters(Syntax):
         broadcaster_id = uimsbf(8)
         reserved_future_use = bslbf(4)
@@ -597,6 +630,7 @@ class BroadcasterInformationSection(Section):
         descriptors = descriptors(broadcaster_descriptor_length)
 
     CRC_32 = rpchof(32)
+
 
 class NetworkBoardInformationSection(Section):
 
@@ -607,6 +641,7 @@ class NetworkBoardInformationSection(Section):
 
     _pids = [0x25]
     _table_ids = [0x40, 0x41]
+
 
 class CommonDataSection(Section):
 
@@ -643,6 +678,7 @@ class CommonDataSection(Section):
 
     CRC_32 = rpchof(32)
 
+
 class LinkedDescriptionSection(Section):
 
     """リンク記述セクション LDT (ARIB-STD-B10-2-5.2.15)"""
@@ -673,6 +709,7 @@ class LinkedDescriptionSection(Section):
 
     CRC_32 = rpchof(32)
 
+
 class EntitlementControlMessage(Section):
 
     """ARIB-STD-B1, B21
@@ -681,6 +718,7 @@ class EntitlementControlMessage(Section):
     """
 
     _table_ids = [0x82, 0x83]
+
 
 class SoftwareDownloadTriggerSection(Section):
 
@@ -723,10 +761,12 @@ class SoftwareDownloadTriggerSection(Section):
             start_time = mjd(40)
             duration = bcdtime(24)
 
-        descriptors = descriptors(lambda self:
-            self.content_description_length - self.schedule_description_length)
+        descriptors = descriptors(lambda self: (
+            self.content_description_length - self.schedule_description_length
+        ))
 
     CRC_32 = rpchof(32)
+
 
 class DSMCCSection(Section):
 
@@ -736,4 +776,3 @@ class DSMCCSection(Section):
     """
 
     _table_ids = [0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F]
-

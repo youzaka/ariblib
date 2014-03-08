@@ -3,9 +3,25 @@
 """イベントラッパー"""
 
 from ariblib.aribstr import AribString
-from ariblib.constants import *
-from ariblib.descriptors import *
+from ariblib.constants import (
+    COMPONENT_TYPE,
+    CONTENT_TYPE,
+    DIGITAL_RECORDING_CONTROL_TYPE,
+    EVENT_GROUP_TYPE,
+    SAMPLING_RATE,
+    USER_TYPE,
+)
+from ariblib.descriptors import (
+    AudioComponentDescriptor,
+    ComponentDescriptor,
+    ContentDescriptor,
+    DigitalCopyControlDescriptor,
+    EventGroupDescriptor,
+    ExtendedEventDescriptor,
+    ShortEventDescriptor,
+)
 from ariblib.sections import ActualStreamEventInformationSection
+
 
 def events(ts, section=ActualStreamEventInformationSection):
     """トランスポートストリームから Event オブジェクトを返すジェネレータ"""
@@ -45,16 +61,19 @@ class Event(object):
                 self.audio_content = acd.stream_content
                 self.audio_component = acd.component_type
                 self.samplint_rate_type = acd.sampling_rate
-                self.audio = COMPONENT_TYPE[acd.stream_content][acd.component_type]
+                self.audio =\
+                    COMPONENT_TYPE[acd.stream_content][acd.component_type]
                 self.sampling_rate = acd.sampling_rate
                 self.sampling_rate_string = SAMPLING_RATE[acd.sampling_rate]
                 self.audio_text = acd.audio_text
             else:
                 self.second_audio_content = acd.stream_content
                 self.second_audio_component = acd.component_type
-                self.second_audio = COMPONENT_TYPE[acd.stream_content][acd.component_type]
+                self.second_audio =\
+                    COMPONENT_TYPE[acd.stream_content][acd.component_type]
                 self.second_sampling_rate = acd.sampling_rate
-                self.second_sampling_rate_string = SAMPLING_RATE[acd.sampling_rate]
+                self.second_sampling_rate_string =\
+                    SAMPLING_RATE[acd.sampling_rate]
                 self.second_audio_text = acd.audio_text
         for egd in desc.get(EventGroupDescriptor, []):
             self.group_type = egd.group_type
@@ -91,7 +110,8 @@ class Event(object):
         detail = [(str(key), AribString(value)) for key, value in detail[1:]]
         if detail:
             self.detail = dict(detail)
-            self.longdesc = '\n'.join("{}\n{}\n".format(key, value) for key, value in detail)
+            self.longdesc = '\n'.join(
+                "{}\n{}\n".format(key, value) for key, value in detail)
 
 if __name__ == '__main__':
     from subprocess import Popen, PIPE
@@ -104,4 +124,3 @@ if __name__ == '__main__':
                 print(event.title, event.free_CA_mode)
             except:
                 pass
-
