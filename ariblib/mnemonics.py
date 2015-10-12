@@ -9,12 +9,24 @@ class mnemonic(object):
         length = self.length
         if isinstance(length, int):
             return length
+        if isinstance(length, mnemonic):
+            return length.__get__(instance, instance.__class__) * 8
         if callable(length):
             return length(instance) * 8
 
     def __sub__(self, other):
+        if callable(other):
+            return lambda instance: self.__get__(
+                instance, instance.__class__) - other(instance)
         return lambda instance: self.__get__(
             instance, instance.__class__) - other
+
+    def __add__(self, other):
+        if callable(other):
+            return lambda instance: self.__get__(
+                instance, instance.__class__) + other(instance)
+        return lambda instance: self.__get__(
+            instance, instance.__class__) + other
 
 
 class uimsbf(mnemonic):
