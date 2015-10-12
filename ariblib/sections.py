@@ -36,3 +36,20 @@ class ProgramAssociationSection(Section):
         program_map_PID = uimsbf(13)
 
     CRC_32 = rpchof(32)
+
+    @property
+    def pmt_maps(self):
+        for pid in self.pids:
+            if pid.program_number != 0:
+                yield pid.program_number, pid.program_map_PID
+
+    @property
+    def pmt_pids(self):
+        for number, pid in self.pmt_maps:
+            yield pid
+
+    @property
+    def network_pid(self):
+        for pid in self.pids:
+            if pid.program_number == 0:
+                return pid.program_map_PID
