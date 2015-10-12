@@ -60,13 +60,11 @@ class fixed_size_loop(mnemonic):
         length = self.real_length(instance) // 8
         start = self.start(instance) // 8
         end = start + length
-        result = []
         while start < end:
             start_pos = start * 8
             obj = self.cls(instance._packet, pos=start_pos)
-            result.append(obj)
+            yield obj
             start += len(obj) // 8
-        return result
 
 
 def loop(length):
