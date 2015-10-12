@@ -10,6 +10,9 @@ class Section(Syntax):
     def __init__(self, packet):
         Syntax.__init__(self, packet)
 
+    def isfull(self):
+        return self.section_length <= len(self) + 3
+
 
 class ProgramAssociationSection(Section):
 

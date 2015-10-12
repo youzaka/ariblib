@@ -28,11 +28,23 @@ class TransportStreamFile(BufferedReader):
         return self.read(self.PACKET_SIZE)
 
     def sections(self, Section):
+        buf = bytearray()
         for packet in self:
             if pid(packet) not in Section.__pids__:
                 continue
             prev, current = payload(packet)
-            yield Section(current)
+            if payload_unit_start_indicator(packet):
+                if buf:
+                    buf.extend(prev)
+                while buf:
+                    yield Section(buf[:])
+                buf[:] = current
+            elif buf:
+                buf.extend(current)
+        if buf:
+            section = Section(buf)
+            if section.isfull():
+                yield section
 
 
 def tsopen(path, chunk_size=10000):
