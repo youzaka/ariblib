@@ -1,3 +1,6 @@
+from ariblib.aribstr import AribString
+
+
 class mnemonic(object):
 
     def __init__(self, length):
@@ -60,6 +63,16 @@ class bslbf(uimsbf):
 
 class rpchof(uimsbf):
     pass
+
+
+class aribstr(mnemonic):
+
+    def __get__(self, instance, owner):
+        start = self.start(instance)
+        block = start // 8
+        last = block + self.real_length(instance) // 8
+        binary = bytearray(instance._packet[block:last])
+        return AribString(binary)
 
 
 class fixed_size_loop(mnemonic):

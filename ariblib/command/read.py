@@ -1,19 +1,18 @@
-from ariblib import tsopen
-from ariblib.sections import ProgramAssociationSection, ProgramMapSection
+import binascii
+import re
+
+from ariblib import packet, tsopen
+from ariblib.sections import NetworkInformationSection
 
 
 def read(args):
     with tsopen(args.path) as ts:
-        pat = next(ts.sections(ProgramAssociationSection))
-        pmt_pids = [pid.program_map_PID for pid in pat.pids
-                    if pid.program_number != 0]
-        ProgramMapSection.__pids__ = pmt_pids
-        for pmt in ts.sections(ProgramMapSection):
-            print(pmt._packet)
-            for item in pmt.maps:
-                print(item.stream_type, item.elementary_PID)
-                for desc in item.descriptors:
-                    print(">", desc.descriptor_tag)
+        for p in ts:
+            if packet.pid(p) in NetworkInformationSection.__pids__:
+                spaced = re.sub(r'([0-9a-f][0-9a-f])', r'\1 ',
+                                binascii.hexlify(p).decode())
+                feeded = re.sub(r'((?:[0-9a-f][0-9a-f] ){16})', '\\1\n', spaced)
+                print(feeded.upper())
 
 
 def add_parser(parsers):

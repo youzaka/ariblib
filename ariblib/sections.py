@@ -92,3 +92,38 @@ class ProgramMapSection(Section):
         descriptors = descriptors(ES_info_length)
 
     CRC_32 = rpchof(32)
+
+
+class NetworkInformationSection(Section):
+
+    """ネットワーク情報セクション NIT (ARIB-STD-B10-2-5.2.4)"""
+
+    __pids__ = [0x10]
+    __table_ids__ = [0x40, 0x41]
+
+    table_id = uimsbf(8)
+    section_syntax_indicator = bslbf(1)
+    reserved_future_use_1 = bslbf(1)
+    reserved_1 = bslbf(2)
+    section_length = uimsbf(12)
+    network_id = uimsbf(16)
+    reserved_2 = bslbf(2)
+    version_number = uimsbf(5)
+    current_next_indicator = bslbf(1)
+    section_number = uimsbf(8)
+    last_section_number = uimsbf(8)
+    reserved_future_use_2 = bslbf(4)
+    network_descriptors_length = uimsbf(12)
+    network_descriptors = descriptors(network_descriptors_length)
+    reserved_future_use_3 = bslbf(4)
+    transport_stream_loop_length = uimsbf(12)
+
+    @loop(transport_stream_loop_length)
+    class transport_streams(Syntax):
+        transport_stream_id = uimsbf(16)
+        original_network_id = uimsbf(16)
+        reserved_future_use = bslbf(4)
+        transport_descriptors_length = uimsbf(12)
+        descriptors = descriptors(transport_descriptors_length)
+
+    CRC_32 = rpchof(32)

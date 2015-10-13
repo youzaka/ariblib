@@ -1,4 +1,4 @@
-from ariblib.mnemonics import bslbf, mnemonic, uimsbf
+from ariblib.mnemonics import aribstr, bslbf, loop, mnemonic, uimsbf
 from ariblib.syntax import Syntax
 
 
@@ -53,6 +53,30 @@ class ConditionalAccessDescriptor(Descriptor):
     private_data_bytes = bslbf(descriptor_length - 4)
 
 
+@tag(0x40)
+class NetworkNameDescriptor(Descriptor):
+
+    """ネットワーク名記述子(ARIB-STD-B10-2.6.2.11)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    char = aribstr(descriptor_length)
+
+
+@tag(0x41)
+class ServiceListDescriptor(Descriptor):
+
+    """サービスリスト記述子(ARIB-STD-B10-2-6.2.14)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+
+    @loop(descriptor_length)
+    class services(Syntax):
+        service_id = uimsbf(16)
+        service_type = uimsbf(8)
+
+
 @tag(0x52)
 class StreamIdentifierDescriptor(Descriptor):
 
@@ -90,6 +114,35 @@ class VideoDecodeControlDescriptor(Descriptor):
     reserved_future_use = bslbf(2)
 
 
+@tag(0xFA)
+class TerrestrialDeliverySystemDescriptor(Descriptor):
+
+    """地上分配システム記述子(ARIB-STD-B10-2-6.2.31)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    area_code = bslbf(12)
+    guard_interval = bslbf(2)
+    transmission_mode = bslbf(2)
+
+    @loop(descriptor_length - 2)
+    class freqs(Syntax):
+        frequency = uimsbf(16)
+
+
+@tag(0xFB)
+class PartialReceptionDescriptor(Descriptor):
+
+    """部分受信記述子(ARIB-STD-B10-2.6.2.32)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+
+    @loop(descriptor_length)
+    class services(Syntax):
+        service_id = uimsbf(16)
+
+
 @tag(0xFD)
 class DataComponentDescriptor(Descriptor):
 
@@ -99,3 +152,16 @@ class DataComponentDescriptor(Descriptor):
     descriptor_length = uimsbf(8)
     data_component_id = uimsbf(16)
     additional_data_component_info = uimsbf(descriptor_length - 2)
+
+
+@tag(0xFE)
+class SystemManagementDescriptor(Descriptor):
+
+    """システム管理記述子(ARIB-STD-B10-2-6.2.21, ARIB-TR-B14-30.4.2.2)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    broadcasting_flag = uimsbf(2)  # 放送 0x00
+    broadcasting_identifier = uimsbf(6)  # 地デジ 0x03, BS 0x02, CS 0x04
+    additional_broadcasting_identification = uimsbf(8)  # 0x01
+    additional_identification_info = uimsbf(descriptor_length - 2)
