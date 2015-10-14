@@ -103,3 +103,35 @@ class TestNetworkInformationSection(TestCase):
             self.assertEqual(stream1_desc3_service1.service_id, 0x5DB8)
             stream1_desc3_service2 = next(stream1_desc3_services)
             self.assertEqual(stream1_desc3_service2.service_id, 0x5DB9)
+            stream1_desc4 = next(stream1_descriptors)
+            self.assertEqual(stream1_desc4.descriptor_tag, 0xCD)
+            self.assertEqual(stream1_desc4.remote_control_key_id, 9)
+            self.assertEqual(stream1_desc4.transmission_type_count, 2)
+            self.assertEqual(str(stream1_desc4.ts_name_char), 'TOKYO　MX')
+            transmissions = stream1_desc4.transmissions
+            transmission1 = next(transmissions)
+            self.assertEqual(transmission1.transmission_type_info, 0x0F)
+            transmission1_services = transmission1.services
+            transmission1_service1 = next(transmission1_services)
+            self.assertEqual(transmission1_service1.service_id, 0x5C38)
+            transmission1_service2 = next(transmission1_services)
+            self.assertEqual(transmission1_service2.service_id, 0x5C39)
+            transmission1_service3 = next(transmission1_services)
+            self.assertEqual(transmission1_service3.service_id, 0x5C3A)
+            transmission1_service4 = next(transmission1_services)
+            self.assertEqual(transmission1_service4.service_id, 0x5C3F)
+            with self.assertRaises(StopIteration):
+                next(transmission1_services)
+            transmission2 = next(transmissions)
+            self.assertEqual(transmission2.transmission_type_info, 0xAF)
+            transmission2_services = transmission2.services
+            transmission2_service1 = next(transmission2_services)
+            self.assertEqual(transmission2_service1.service_id, 0x5DB8)
+            transmission2_service2 = next(transmission2_services)
+            self.assertEqual(transmission2_service2.service_id, 0x5DB9)
+            with self.assertRaises(StopIteration):
+                next(transmission2_services)
+            with self.assertRaises(StopIteration):
+                next(transmissions)
+
+            self.assertEqual(nit.CRC_32, 0xFC745562)

@@ -1,4 +1,4 @@
-from ariblib.mnemonics import aribstr, bslbf, loop, mnemonic, uimsbf
+from ariblib.mnemonics import aribstr, bslbf, loop, mnemonic, times, uimsbf
 from ariblib.syntax import Syntax
 
 
@@ -112,6 +112,28 @@ class VideoDecodeControlDescriptor(Descriptor):
     sequence_end_code_flag = bslbf(1)
     video_encode_format = bslbf(4)
     reserved_future_use = bslbf(2)
+
+
+@tag(0xCD)
+class TSInformationDescriptor(Descriptor):
+
+    """TS情報記述子(ARIB-STD-B10-2.6.2.42)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    remote_control_key_id = uimsbf(8)
+    length_of_ts_name = uimsbf(6)
+    transmission_type_count = uimsbf(2)
+    ts_name_char = aribstr(length_of_ts_name)
+
+    @times(transmission_type_count)
+    class transmissions(Syntax):
+        transmission_type_info = bslbf(8)
+        num_of_service = uimsbf(8)
+
+        @times(num_of_service)
+        class services(Syntax):
+            service_id = uimsbf(16)
 
 
 @tag(0xFA)

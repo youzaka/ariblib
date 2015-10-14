@@ -92,5 +92,39 @@ class fixed_size_loop(mnemonic):
             start += len(obj) // 8
 
 
+class fixed_count_loop(mnemonic):
+
+    def __init__(self, cls, count):
+        self.cls = cls
+        self.count = count
+        mnemonic.__init__(self, None)
+
+    def __get__(self, instance, owner):
+        start = self.start(instance) // 8
+        for _ in range(self.real_count(instance)):
+            start_pos = start * 8
+            obj = self.cls(instance._packet, pos=start_pos)
+            yield obj
+            start += len(obj) // 8
+
+    def real_count(self, instance):
+        count = self.count
+        if isinstance(count, int):
+            return count
+        if isinstance(count, mnemonic):
+            return count.__get__(instance, instance.__class__)
+        if callable(count):
+            return count(instance)
+        return self.count
+
+    def real_length(self, instance):
+        return sum(mnemonic.real_length(sub)
+                   for sub in getattr(instance, self.name)
+                   for mnemonic in sub._mnemonics)
+
+
 def loop(length):
     return lambda cls: fixed_size_loop(cls, length)
+
+def times(count):
+    return lambda cls: fixed_count_loop(cls, count)
