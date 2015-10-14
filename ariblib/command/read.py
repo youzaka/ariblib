@@ -2,16 +2,17 @@ import binascii
 import re
 
 from ariblib import packet, tsopen
-from ariblib.sections import NetworkInformationSection
+from ariblib.sections import ServiceDescriptionSection
 
 
 def read(args):
     with tsopen(args.path) as ts:
         for p in ts:
-            if packet.pid(p) in NetworkInformationSection.__pids__:
+            if packet.pid(p) in ServiceDescriptionSection.__pids__:
                 spaced = re.sub(r'([0-9a-f][0-9a-f])', r'\1 ',
                                 binascii.hexlify(p).decode())
-                feeded = re.sub(r'((?:[0-9a-f][0-9a-f] ){16})', '\\1\n', spaced)
+                feeded = re.sub(r'((?:[0-9a-f][0-9a-f] ){16})', '\\1\n',
+                                spaced)
                 print(feeded.upper())
 
 
