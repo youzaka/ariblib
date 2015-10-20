@@ -127,3 +127,39 @@ class NetworkInformationSection(Section):
         descriptors = descriptors(transport_descriptors_length)
 
     CRC_32 = rpchof(32)
+
+
+class ServiceDescriptionSection(Section):
+
+    """サービス記述セクション SDT (ARIB-STD-B10-2-5.2.6)"""
+
+    __pids__ = [0x11]
+    __table_ids__ = [0x42, 0x46]
+
+    table_id = uimsbf(8)
+    section_syntax_indicator = bslbf(1)
+    reserved_future_use_1 = bslbf(1)
+    reserved_1 = bslbf(2)
+    section_length = uimsbf(12)
+    transport_stream_id = uimsbf(16)
+    reserved_2 = bslbf(2)
+    version_number = uimsbf(5)
+    current_next_indicator = bslbf(1)
+    section_number = uimsbf(8)
+    last_section_number = uimsbf(8)
+    original_network_id = uimsbf(16)
+    reserved_future_use_2 = bslbf(8)
+
+    @loop(section_length - 12)
+    class services(Syntax):
+        service_id = uimsbf(16)
+        reserved_future_use = bslbf(3)
+        EIT_user_defined_flags = bslbf(3)
+        EIT_schedule_flag = bslbf(1)
+        EIT_present_following_flag = bslbf(1)
+        running_status = uimsbf(3)
+        free_CA_mode = bslbf(1)
+        descriptors_loop_length = uimsbf(12)
+        descriptors = descriptors(descriptors_loop_length)
+
+    CRC_32 = rpchof(32)

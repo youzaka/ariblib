@@ -77,6 +77,20 @@ class ServiceListDescriptor(Descriptor):
         service_type = uimsbf(8)
 
 
+@tag(0x48)
+class ServiceDescriptor(Descriptor):
+
+    """サービス記述子(ARIB-STD-B10-2-6.2.13)"""
+
+    descriptor_tag = uimsbf(8)
+    descriptor_length = uimsbf(8)
+    service_type = uimsbf(8)
+    service_provider_name_length = uimsbf(8)
+    service_provider_name = aribstr(service_provider_name_length)
+    service_name_length = uimsbf(8)
+    service_name = aribstr(service_name_length)
+
+
 @tag(0x52)
 class StreamIdentifierDescriptor(Descriptor):
 
