@@ -14,10 +14,14 @@ sdist
 develop-eggs
 .installed.cfg
 
+# OSX
+.AppleDouble
+
 # Installer logs
 pip-log.txt
 
 # Unit test / coverage reports
+.cache
 .coverage
 .tox
 
