@@ -123,3 +123,31 @@ class ColoredCProfileString(CProfileString):
         str = ''.join(self).strip() + '\033[0m'
         self.__str__ = lambda self: str
         return str
+
+
+class WebVTTCProfileString(ColoredCProfileString):
+
+    """WebVTT用 CProfile 文字列"""
+
+    mapping = {
+        0: ' ',
+        7: '\a',
+        12: '\n',
+        13: '\n',
+        32: ' ',
+        0x80: '</c>',
+        0x81: '<c.red>',
+        0x82: '<c.green>',
+        0x83: '<c.yellow>',
+        0x84: '<c.blue>',
+        0x85: '<c.purple>',
+        0x86: '<c.cyan>',
+        0x87: '</c>',
+    }
+
+    def __str__(self):
+        string = ''.join(self).strip()
+        if string:
+            string += '</c>'
+        self.__str__ = lambda self: string
+        return string
