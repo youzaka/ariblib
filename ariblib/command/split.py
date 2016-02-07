@@ -48,10 +48,11 @@ def split(args):
     pat_pid = ProgramAssociationSection._pids[0]
     with tsopen(args.inpath) as ts, open(args.outpath, 'wb') as out:
         for p in ts:
-            if packet.pid(p) == pat_pid:
+            pid = packet.pid(p)
+            if pid == pat_pid:
                 out.write(p[:5])
                 out.write(new_pat)
-            elif packet.pid(p) in remained_pids:
+            elif pid in remained_pids:
                 out.write(p)
 
 
