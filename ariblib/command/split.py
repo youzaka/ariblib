@@ -1,18 +1,24 @@
+import itertools
+
 from ariblib import packet, tsopen
 from ariblib.sections import ProgramAssociationSection, ProgramMapSection
+
+
+def bits(data):
+    masks = range(7, -1, -1)
+    return ((x >> mask) & 0x01 for x, mask in itertools.product(data, masks))
+
 
 def crc32(data):
     """CRC32を計算する"""
 
     crc = 0xFFFFFFFF
-    for x in data:
-        for i in range(8):
-            bit = (x >> (7 - i)) & 0x1
-            c = 1 if crc & 0x80000000 else 0
-            crc = crc << 1
-            if c ^ bit:
-                crc ^= 0x04c11db7
-            crc &= 0xFFFFFFFF
+    for bit in bits(data):
+        c = 1 if crc & 0x80000000 else 0
+        crc <<= 1
+        if c ^ bit:
+            crc ^= 0x04c11db7
+        crc &= 0xFFFFFFFF
     return crc
 
 
