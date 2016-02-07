@@ -1,5 +1,3 @@
-import operator
-
 from ariblib import packet, tsopen
 from ariblib.sections import ProgramAssociationSection, ProgramMapSection
 
