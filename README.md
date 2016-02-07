@@ -1,88 +1,41 @@
-ariblib
-=======
+# ariblib
 
-速度優先の Transport Stream パーサです。
-Python 3.2 での動作が前提ですが、3.1 でも動くかもしれません。
+ARIB-STD-B10 や ARIB-STD-B24 などの Python3+ での実装です。
 
+m2tsをパースするライブラリと、応用を行ういくつかのコマンドからなります。
+
+## インストール
+pipからインストールするには以下のようにします:
 ```
-$ sudo python3.2 setup.py install
-```
-
-ARIB-STD で定義されているデータ構造をなるべく近い形で
-Python コードとして記述できるようにしています。
-
-たとえば、 Program Map Section のデータ構造は ARIB-STD-B10 第2部付録E 表E-3 で
-以下のように記述されています:
-
-```
-TS_program_map_section(){
-    table_id                   8  uimsbf
-    section_syntax_indicator   1  bslbf
-    ‘0’                        1  bslbf
-    reserved                   2  bslbf
-    section_length            12  uimsbf
-    program_number            16  uimsbf
-    reserved                   2  bslbf
-    version_number             5  uimsbf
-    current_next_indicator     1  bslbf
-    section_number             8  uimsbf
-    last_section_number        8  uimsbf
-    reserved                   3  bslbf
-    PCR_PID                   13  uimsbf
-    reserved                   4  bslbf
-    program_info_length       12  uimsbf
-    for (i=0;i<N;i++){
-        descriptor()
-    }
-    for (i=0;i<N1;i++){
-        stream_type            8  uimsbf
-        reserved               3  bslbf
-        elementary_PID        13  uimsbf
-        reserved               4  bslbf
-        ES_info_length        12  uimsbf
-        for (i=0;i<N2;i++){
-            descriptor()
-        }
-    }
-    CRC_32                    32 rpchof
-```
-これを ariblib では以下のように記述します。 (説明に必要でない行は省略しています)
-```python
-
-class ProgramMapSection(Section):
-    table_id = uimsbf(8)
-    section_syntax_indicator = bslbf(1)
-    reserved_future_use = bslbf(1)
-    reserved_1 = bslbf(2)
-    section_length = uimsbf(12)
-    program_number = uimsbf(16)
-    reserved_2 = bslbf(2)
-    version_number = uimsbf(5)
-    current_next_indicator = bslbf(1)
-    section_number = uimsbf(8)
-    last_section_number = uimsbf(8)
-    reserved_3 = bslbf(3)
-    PCR_PID = uimsbf(13)
-    reserved_4 = bslbf(4)
-    program_info_length = uimsbf(12)
-    descriptors = descriptors(program_info_length)
-
-    @loop(lambda self: self.section_length - (13 + self.program_info_length))
-    class maps(Syntax):
-        stream_type = uimsbf(8)
-        reserved_1 = bslbf(3)
-        elementary_PID = uimsbf(13)
-        reserved_2 = bslbf(4)
-        ES_info_length = uimsbf(12)
-        descriptors = descriptors(ES_info_length)
-
-    CRC_32 = rpchof(32)
+$ sudo pip install ariblib
 ```
 
-ビット列表記をディスクリプタとして実装したり、繰り返し構造や制御構造をデコレータとして実装したり
-することで、なるべく仕様書に近い形でクラスの表記ができるようにしてます。
+パッケージインストールがうまくいかない場合や、直接ソースコードからパッケージを作成する場合は:
+```
+$ git clone https://github.com/youzaka/ariblib.git
+$ sudo python setup.py install
+```
 
-使い方例1 字幕を表示
+## コマンド利用例
+### WebVTT 互換の字幕ファイルを作成する
+```
+$ python -m ariblib vtt SRC DST
+```
+とすると、 SRC にある ts ファイルを読みこみ、 DST に出力します。
+
+- SRC に `-` を指定すると標準入力からバイナリを読み込みます。
+- DST に `-` を指定すると標準出力に書き出します。
+
+### tsから必要なストリームのみを取り出す(ワンセグなどの削除)
+```
+$ python -m ariblib strip SRC DST
+```
+とすると、 SRC にある ts ファイルが指定する PAT 情報を読み込み、最初のストリームの動画・音声のみを保存した TS ファイルを DST に保存します。 TSSplitter のようなことができます。
+
+## ライブラリ利用例
+コマンド化されていないことも、直接ライブラリを使って操作すると実現できます。 (PullRequestは随時受け付けています)
+
+### 例1: 字幕を表示
 ```python
 
 from ariblib import tsopen
@@ -102,7 +55,7 @@ with tsopen(sys.argv[1]) as ts:
         print(body)
 ```
 
-使い方例2 いま放送中の番組と次の番組を表示
+### 例2: いま放送中の番組と次の番組を表示
 ```python
 
 import sys
@@ -128,7 +81,7 @@ with tsopen(sys.argv[1]) as ts:
     print('次の番組', show_program(following))
 ```
 
-使い方例3: 放送局名の一欄を表示
+### 例3: 放送局名の一欄を表示
 (地上波ではその局, BSでは全局が表示される)
 ```python
 
@@ -147,7 +100,7 @@ with tsopen(sys.argv[1]) as ts:
                       sd.service_provider_name, sd.service_name)
 ```
 
-使い方例4: 動画パケットの PID とその動画の解像度を表示
+### 例4: 動画パケットの PID とその動画の解像度を表示
 ```python
 
 import sys
@@ -166,7 +119,7 @@ with tsopen(sys.argv[1]) as ts:
                 print(tsmap.elementary_PID, VIDEO_ENCODE_FORMAT[vd.video_encode_format])
 ```
 
-使い方例5: EPG情報の表示
+### 例5: EPG情報の表示
 ```python
 from ariblib import tsopen
 from ariblib.event import events
@@ -182,7 +135,7 @@ with tsopen(sys.argv[1]) as ts:
         print('-' * 80)
 ```
 
-使い方例6: 深夜アニメの出力
+### 例6: 深夜アニメの出力
 ```python
 
 import sys
@@ -204,4 +157,3 @@ with tsopen(sys.argv[1]) as ts:
                     print(eit.service_id, event.event_id, event.start_time,
                           event.duration, sed.event_name_char, sed.text_char)
 ```
-
