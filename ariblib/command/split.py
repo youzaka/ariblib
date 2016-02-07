@@ -1,4 +1,5 @@
 import itertools
+import struct
 
 from ariblib import packet, tsopen
 from ariblib.sections import ProgramAssociationSection, ProgramMapSection
@@ -26,10 +27,7 @@ def replace_pat(pat):
     new_pat = bytearray(pat[:16])
     new_pat[2] = 0x11
     crc = crc32(new_pat)
-    new_pat.append((crc >> 24) & 0xFF)
-    new_pat.append((crc >> 16) & 0xFF)
-    new_pat.append((crc >> 8) & 0xFF)
-    new_pat.append(crc & 0xFF)
+    new_pat.extend(struct.pack('>L', crc))
     new_pat.extend([0xFF] * 163)
     return new_pat
 
