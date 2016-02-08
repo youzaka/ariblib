@@ -27,7 +27,7 @@ $ python -m ariblib vtt SRC DST
 
 ### tsから必要なストリームのみを取り出す(ワンセグなどの削除)
 ```
-$ python -m ariblib strip SRC DST
+$ python -m ariblib split SRC DST
 ```
 とすると、 SRC にある ts ファイルが指定する PAT 情報を読み込み、最初のストリームの動画・音声のみを保存した TS ファイルを DST に保存します。 TSSplitter のようなことができます。
 
