@@ -28,6 +28,13 @@ def parse_pmt(args):
     json.dump(program_maps, args.outfile, indent=4)
 
 
+def parse_nit(args):
+    payloads = packet.payloads(packet.packets(args.infile))
+    nit = next(table.tables([0x10], [0x40, 0x41], payloads))
+    networks = list(sections.network_informations(nit))
+    json.dump(networks, args.outfile, indent=4)
+
+
 def add_parser(parsers):
     parser = parsers.add_parser('section')
     parser.add_argument(
@@ -36,6 +43,9 @@ def add_parser(parsers):
     parser.add_argument(
         '--pmt', action='store_const', dest='command', const=parse_pmt,
         help='parse pmt')
+    parser.add_argument(
+        '--nit', action='store_const', dest='command', const=parse_nit,
+        help='parse nit')
     parser.add_argument(
         'infile', nargs='?', type=FileType('rb'), default=sys.stdin)
     parser.add_argument(

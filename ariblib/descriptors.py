@@ -1,3 +1,7 @@
+from ariblib import parse
+from ariblib.aribstr import AribString
+
+
 _descriptors = {}
 
 
@@ -29,6 +33,32 @@ def conditional_access_descriptor(p):
         'ca_system_id': ca_system_id,
         'ca_pid': ca_pid,
     }
+
+
+@tag(0x40)
+def network_name_descriptor(p):
+    """ネットワーク名記述子(ARIB-STD-B10-2.6.2.11)"""
+
+    char = str(AribString(p))
+    return {
+        'network_name': char,
+    }
+
+
+@tag(0x41)
+def service_list_descriptor(p):
+    """サービスリスト記述子(ARIB-STD-B10-2-6.2.14)"""
+
+    service_list = []
+    while p:
+        service_id = (p[0] << 8) | p[1]
+        service_type = p[2]
+        service_list.append({
+            'service_id': service_id,
+            'service_type': service_type,
+        })
+        p = p[3:]
+    return {'service_list': service_list}
 
 
 @tag(0x52)
@@ -70,6 +100,38 @@ def video_decode_control_descriptor(p):
     }
 
 
+@tag(0xCD)
+def ts_information_descriptor(p):
+    """TS情報記述子(ARIB-STD-B10-2.6.2.42)"""
+
+    remote_control_key_id = p[0]
+    length_of_ts_name = (p[1] & 0xC0) >> 2
+    transmission_type_count = p[1] & 0x03
+    index = 2 + length_of_ts_name
+    ts_name_char = str(AribString(p[2:index]))
+    transmissions = []
+
+    for _ in range(transmission_type_count):
+        transmission_type_info = p[index]
+        num_of_service = p[index+1]
+        service_list = []
+        index += 2
+        for __ in range(num_of_service):
+            service_id = (p[index] << 8) | p[index+1]
+            service_list.append(service_id)
+            index += 2
+
+        transmissions.append({
+            'transmission_type_info': transmission_type_info,
+            'service_list': service_list,
+        })
+    return {
+        'remote_control_key_id': remote_control_key_id,
+        'ts_name_char': ts_name_char,
+        'transmissions': transmissions,
+    }
+
+
 @tag(0xF6)
 def access_control_descriptor(p):
     """アクセス制御記述子 (ARIB-TR-B14 第四篇改定案 30.2.2.2)"""
@@ -99,6 +161,18 @@ def terrestrial_delivery_system_descriptor(p):
         'transmission_mode': transmission_mode,
         'frequencies': frequencies,
     }
+
+
+@tag(0xFB)
+def partial_reception_descriptor(p):
+    """部分受信記述子(ARIB-STD-B10-2.6.2.32)"""
+
+    service_list = []
+    while p:
+        service_id = (p[0] << 8) | p[1]
+        service_list.append(service_id)
+        p = p[2:]
+    return {'partial_reception': service_list}
 
 
 @tag(0xFD)
@@ -159,3 +233,19 @@ def data_component_descriptor(p):
             'data_component_id': data_component_id,
             'additional_data_component_info': additional_data_component_info,
         }
+
+
+@tag(0xFE)
+def system_management_descriptor(p):
+    """システム管理記述子(ARIB-STD-B10-2-6.2.21, ARIB-TR-B14-30.4.2.2)"""
+
+    broadcasting_flag = (p[0] & 0xC0) >> 6
+    broadcasting_identifier = p[0] & 0x3F
+    additional_broadcasting_identification = p[1]
+
+    return {
+        'broadcasting_flag': broadcasting_flag,
+        'broadcasting_identifier': broadcasting_identifier,
+        'additional_broadcasting_identification':
+            additional_broadcasting_identification,
+    }
