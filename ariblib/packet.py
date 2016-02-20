@@ -7,14 +7,15 @@ def packets(f, chunk_size=10000):
     packet_size = 188
     buffer_size = packet_size * chunk_size
     packets = iter(lambda: f.read(buffer_size), b'')
-    indices = zip(
+    indices = list(zip(
         range(0, buffer_size - packet_size + 1, packet_size),
-        range(packet_size, buffer_size + 1, packet_size))
-    for packet, (start, stop) in itertools.product(packets, indices):
-        next_packet = packet[start:stop]
-        if not next_packet:
-            raise StopIteration
-        yield next_packet
+        range(packet_size, buffer_size + 1, packet_size)))
+    for packet in packets:
+        for start, stop in indices:
+            next_packet = packet[start:stop]
+            if not next_packet:
+                raise StopIteration
+            yield next_packet
 
 
 def transport_error_indicator(p):
