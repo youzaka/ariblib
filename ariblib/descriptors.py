@@ -61,6 +61,50 @@ def service_list_descriptor(p):
     return {'service_list': service_list}
 
 
+@tag(0x48)
+def service_descriptor(p):
+    """サービス記述子(ARIB-STD-B10-2-6.2.13)"""
+
+    service_type = p[0]
+    service_provider_name_length = p[1]
+    index = 2 + service_provider_name_length
+    service_provider_name = str(AribString(p[2:index]))
+    service_name_length = p[index]
+    index += 1
+    end = index + service_name_length + 1
+    service_name = str(AribString(p[index:end]))
+    return {
+        'service_type': service_type,
+        'service_provider_name': service_provider_name,
+        'service_name': service_name,
+    }
+
+
+@tag(0x4A)
+def linkage_descriptor(p):
+    """リンク記述子(ARIB-STD-B10-2.6.2.8)"""
+
+    transport_stream_id = (p[0] << 8) | p[1]
+    original_network_id = (p[2] << 8) | p[3]
+    service_id = (p[4] << 8) | p[5]
+    linkage_type = p[6]
+    base = {
+        'transport_stream_id': transport_stream_id,
+        'original_network_id': original_network_id,
+        'service_id': service_id,
+        'linkage_type': linkage_type,
+    }
+
+    if linkage_type == 0x03:
+        message_id = p[7]
+        message = str(AribString(p[8:]))
+        base.update({
+            'message_id': message_id,
+            'message': message,
+        })
+    return base
+
+
 @tag(0x52)
 def stream_identifier_descriptor(p):
     """ストリーム識別記述子 (ARIB-STD-B10-2-6.2.16)"""
@@ -100,6 +144,16 @@ def video_decode_control_descriptor(p):
     }
 
 
+@tag(0xCB)
+def encrypt_descriptor(p):
+    """Encrypt記述子(ARIB-STD-B25-3.4.4.7)"""
+
+    encrypt_id = p[0]
+    return {
+        'encrypt_id': encrypt_id,
+    }
+
+
 @tag(0xCD)
 def ts_information_descriptor(p):
     """TS情報記述子(ARIB-STD-B10-2.6.2.42)"""
@@ -130,6 +184,36 @@ def ts_information_descriptor(p):
         'ts_name_char': ts_name_char,
         'transmissions': transmissions,
     }
+
+
+@tag(0xCF)
+def logo_transmission_descriptor(p):
+    """ロゴ伝送記述子(ARIB-STD-B10-2-6.2.44)"""
+
+    logo_transmission_type = p[0]
+
+    if logo_transmission_type == 0x01:
+        logo_id = ((p[1] & 0x01) << 8) | p[2]
+        logo_version = ((p[3] & 0x0F) << 8) | p[4]
+        download_data_id = (p[5] < 8) | p[6]
+        return {
+            'logo_transmission_type': logo_transmission_type,
+            'logo_id': logo_id,
+            'logo_version': logo_version,
+            'download_data_id': download_data_id,
+        }
+    elif logo_transmission_type == 0x02:
+        logo_id = ((p[1] & 0x01) << 8) | p[2]
+        return {
+            'logo_transmission_type': logo_transmission_type,
+            'logo_id': logo_id,
+        }
+    elif logo_transmission_type == 0x03:
+        logo_char = str(AribString(p[1:]))
+        return {
+            'logo_transmission_type': logo_transmission_type,
+            'logo_char': logo_char,
+        }
 
 
 @tag(0xF6)

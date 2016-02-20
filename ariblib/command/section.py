@@ -35,6 +35,13 @@ def parse_nit(args):
     json.dump(networks, args.outfile, indent=4)
 
 
+def parse_sdt(args):
+    payloads = packet.payloads(packet.packets(args.infile))
+    sdt = next(table.tables([0x11], [0x42, 0x46], payloads))
+    services = list(sections.service_descriptions(sdt))
+    json.dump(services, args.outfile, indent=4)
+
+
 def add_parser(parsers):
     parser = parsers.add_parser('section')
     parser.add_argument(
@@ -46,6 +53,9 @@ def add_parser(parsers):
     parser.add_argument(
         '--nit', action='store_const', dest='command', const=parse_nit,
         help='parse nit')
+    parser.add_argument(
+        '--sdt', action='store_const', dest='command', const=parse_sdt,
+        help='parse sdt')
     parser.add_argument(
         'infile', nargs='?', type=FileType('rb'), default=sys.stdin)
     parser.add_argument(

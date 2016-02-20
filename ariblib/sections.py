@@ -102,3 +102,47 @@ def network_informations(p):
 
         yield dict(base, **additional)
         start += 6 + transport_descriptors_length
+
+
+def service_descriptions(p):
+    """SDTのパースを行う"""
+
+    table_id = p[0]
+    section_length = ((p[1] & 0x0F) << 8) | p[2]
+    transport_stream_id = (p[3] << 8) | p[4]
+    version_number = (p[5] & 0x3E) >> 1
+    section_number = p[6]
+    last_section_number = p[7]
+    original_network_id = (p[8] << 8) | p[9]
+
+    base = {
+        'table_id': table_id,
+        'transport_stream_id': transport_stream_id,
+        'version_number': version_number,
+        'section_number': section_number,
+        'last_section_number': last_section_number,
+        'original_network_id': original_network_id,
+    }
+    start = 11
+    end = section_length - 4
+    while start < end:
+        service_id = (p[start] << 8) | p[start+1]
+        eit_user_defined_flags = (p[start+2] & 0x1C) >> 2
+        eit_schedule_flag = (p[start+2] & 0x02) >> 1
+        eit_present_following_flag = p[start+2] & 0x01
+        running_status = (p[start+3] & 0xE0) >> 5
+        free_ca_mode = (p[start+3] & 0x10) >> 4
+        descriptors_loop_length = ((p[start+3] & 0x0f) << 8) | p[start+4]
+        additional = {
+            'service_id': service_id,
+            'eit_user_defined_flags': eit_user_defined_flags,
+            'eit_schedule_flag': eit_schedule_flag,
+            'eit_present_following_flag': eit_present_following_flag,
+            'running_status': running_status,
+            'free_ca_mode': free_ca_mode,
+        }
+        additional.update(descriptors(
+            p[start+5:start+5+descriptors_loop_length]))
+
+        yield dict(base, **additional)
+        start += 5 + descriptors_loop_length
