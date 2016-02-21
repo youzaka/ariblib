@@ -149,6 +149,22 @@ def service_descriptions(p):
         start += 5 + descriptors_loop_length
 
 
+def time_offsets(p):
+    """TOTのパースを行う"""
+
+    table_id = p[0]
+    section_length = ((p[1] & 0x0F) << 8) | p[2]
+    jst_time = parse.mjd(p[3:8])
+    descriptors_loop_length = ((p[8] & 0x0F) << 8) | p[9]
+    base = {
+        'table_id': table_id,
+        'section_length': section_length,
+        'jst_time': jst_time,
+    }
+    base.update(descriptors(p[10:10+descriptors_loop_length]))
+    yield base
+
+
 def event_informations(p):
     """EITのパースを行う"""
 

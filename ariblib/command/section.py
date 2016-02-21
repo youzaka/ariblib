@@ -48,6 +48,13 @@ def parse_sdt(args):
         pprint(service, args.outfile)
 
 
+def parse_tot(args):
+    payloads = packet.payloads(packet.packets(args.infile))
+    tot = next(table.tables([0x14], [0x73], payloads))
+    offset = next(sections.time_offsets(tot))
+    pprint(offset, args.outfile)
+
+
 def parse_eit(args):
     payloads = packet.payloads(packet.packets(args.infile))
     eit = table.tables([0x12, 0x26, 0x27], list(range(0x4E, 0x70)), payloads)
@@ -86,6 +93,9 @@ def add_parser(parsers):
     parser.add_argument(
         '--sdt', action='store_const', dest='command', const=parse_sdt,
         help='parse sdt')
+    parser.add_argument(
+        '--tot', action='store_const', dest='command', const=parse_tot,
+        help='parse tot')
     parser.add_argument(
         '--eit', action='store_const', dest='command', const=parse_eit,
         help='parse eit')
