@@ -71,6 +71,14 @@ def parse_tot(args):
     pprint(offset, args.outfile)
 
 
+def parse_cdt(args):
+    payloads = packet.payloads(packet.packets(args.infile))
+    cdt = table.tables([0x29], [0xC8], payloads)
+    data = chain.from_iterable(map(sections.common_data, cdt))
+    for datum in data:
+        pprint(datum, args.outfile)
+
+
 def parse_eit(args):
     payloads = packet.payloads(packet.packets(args.infile))
     eit = table.tables([0x12, 0x26, 0x27], list(range(0x4E, 0x70)), payloads)
@@ -118,6 +126,9 @@ def add_parser(parsers):
     parser.add_argument(
         '--tot', action='store_const', dest='command', const=parse_tot,
         help='parse tot')
+    parser.add_argument(
+        '--cdt', action='store_const', dest='command', const=parse_cdt,
+        help='parse cdt')
     parser.add_argument(
         '--eit', action='store_const', dest='command', const=parse_eit,
         help='parse eit')

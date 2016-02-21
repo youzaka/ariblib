@@ -220,6 +220,45 @@ def time_offsets(p):
     yield base
 
 
+def common_data(p):
+    """CDTのパースを行う"""
+
+    table_id = p[0]
+    section_length = ((p[1] & 0x0F) << 8) | p[2]
+    download_data_id = (p[3] << 8) | p[4]
+    version_number = (p[5] & 0x3E) >> 1
+    section_number = p[6]
+    last_section_number = p[7]
+    original_network_id = (p[8] << 8) | p[9]
+    data_type = p[10]
+    descriptors_loop_length = ((p[11] & 0x0F) << 8) | p[12]
+    index = 13 + descriptors_loop_length
+    base = {
+        'table_id': table_id,
+        'section_length': section_length,
+        'download_data_id': download_data_id,
+        'version_number': version_number,
+        'section_number': section_number,
+        'last_section_number': last_section_number,
+        'original_network_id': original_network_id,
+        'data_type': data_type,
+    }
+    base.update(descriptors(p[13:index]))
+
+    logo_type = p[index]
+    logo_id = ((p[index+1] & 0x01) << 8) | p[index+2]
+    logo_version = ((p[index+3] & 0x0F) << 8) | p[index+4]
+    data_size = (p[index+5] << 8) | p[index+6]
+    data_byte = p[index+7:index+7+data_size]
+    additional = {
+        'logo_type': logo_type,
+        'logo_id': logo_id,
+        'logo_version': logo_version,
+        'data_byte': data_byte,
+    }
+    yield dict(base, **additional)
+
+
 def event_informations(p):
     """EITのパースを行う"""
 
