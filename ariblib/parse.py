@@ -51,3 +51,11 @@ def bcd2int(bcd):
     """bcdを10進数にする"""
 
     return ((bcd & 0xF0) >> 4) * 10 + (bcd & 0x0F)
+
+
+def pts(pts):
+    """PTSを求める"""
+
+    pts_hz = 90000
+    second = pts / pts_hz
+    return timedelta(seconds=second)

@@ -22,13 +22,13 @@ class TestAdaptation(TestCase):
         p = b'\xB7\x10\xD2\x2D\x74\x82\x80\xF9'
         self.assertFalse(adaptation.elementary_stream_priority_indicator(p))
 
-    def test_PCR_flag(self):
+    def test_pcr_flag(self):
         p = b'\xB7\x10\xD2\x2D\x74\x82\x80\xF9'
-        self.assertTrue(adaptation.PCR_flag(p))
+        self.assertTrue(adaptation.pcr_flag(p))
 
-    def test_OPCR_flag(self):
+    def test_opcr_flag(self):
         p = b'\xB7\x10\xD2\x2D\x74\x82\x80\xF9'
-        self.assertFalse(adaptation.OPCR_flag(p))
+        self.assertFalse(adaptation.opcr_flag(p))
 
     def test_splicing_point_flag(self):
         p = b'\xB7\x10\xD2\x2D\x74\x82\x80\xF9'

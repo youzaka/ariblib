@@ -8,7 +8,7 @@ from operator import itemgetter
 from pprint import pprint
 import sys
 
-from ariblib import packet, sections, table
+from ariblib import caption, packet, sections, table
 
 
 def parse_pat(args):
@@ -103,6 +103,29 @@ def parse_next_event(args):
     pprint(present, args.outfile)
 
 
+def parse_caption(args):
+    ts = packet.packets(args.infile)
+    payloads = packet.payloads(ts)
+    pat = next(table.tables([0x0], [0x0], payloads))
+    associations = list(sections.program_associations(pat))
+    pmt_pids = [association['program_map_pid'] for association
+                in sections.program_associations(pat)
+                if association['program_number'] != 0]
+    pmt = table.tables(pmt_pids, [0x2], payloads)
+    program_maps = chain.from_iterable(map(sections.program_maps, pmt))
+    caption_pid = next(
+        stream['elementary_pid'] for stream in program_maps
+        if stream['stream_type'] == 0x06 and stream['component_tag'] == 0x87)
+    args.infile.seek(0)
+    base = next(packet.ptses(packet.packets(args.infile)))
+    pes = packet.streams(ts, caption_pid)
+    captions = chain.from_iterable(map(sections.captions, pes))
+    absolutes = caption.absolutize(captions, base, -2)
+    srts = caption.srts(absolutes)
+    for srt in srts:
+        print(srt, file=args.outfile)
+
+
 def add_parser(parsers):
     parser = parsers.add_parser('section')
     parser.add_argument(
@@ -140,6 +163,10 @@ def add_parser(parsers):
         '--next', action='store_const', dest='command',
         const=parse_next_event,
         help='parse next event')
+    parser.add_argument(
+        '--caption', action='store_const', dest='command',
+        const=parse_caption,
+        help='parse caption')
     parser.add_argument(
         'infile', nargs='?', type=FileType('rb'), default=sys.stdin)
     parser.add_argument(

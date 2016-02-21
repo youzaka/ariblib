@@ -1,5 +1,6 @@
-from ariblib.descriptors import descriptors
 from ariblib import parse
+from ariblib.caption import CProfileString
+from ariblib.descriptors import descriptors
 
 
 def program_associations(p):
@@ -306,3 +307,101 @@ def event_informations(p):
 
         yield dict(base, **additional)
         start += 12 + descriptors_loop_length
+
+
+def captions(p):
+    """字幕のパースを行う"""
+
+    stream_id = p[3]
+    pes_packet_length = (p[4] << 8) | p[5]
+    pes_header_data_length = p[8]
+    pts = (((p[9] & 0x0E) << 29) | (p[10] << 22) | ((p[11] & 0xFE) << 14) |
+           (p[12] << 7) | ((p[13] & 0xFE) >> 1))
+    delta = parse.pts(pts)
+    index = pes_header_data_length + 9
+    data_identifier = p[index]
+    private_stream_id = p[index+1]
+    pes_data_packet_header_length = p[index+2] & 0x0F
+    index += 3 + pes_data_packet_header_length
+    data_group_id = (p[index] & 0xFC) >> 2
+    data_group_version = p[index] & 0x03
+    data_group_link_number = p[index+1]
+    last_data_group_link_number = p[index+2]
+    data_group_size = (p[index+3] << 8) | p[index+4]
+
+    index += 5
+    if data_group_id in (0x0, 0x20):
+        tmd = (p[index] & 0xC0) >> 6
+        if tmd == 0b10:
+            index += 5
+        num_languages = p[index+1]
+        index += 2
+        for _ in range(num_languages):
+            language_tag = (p[index] & 0xE0) >> 5
+            dmf1 = (p[index] & 0x0C) >> 2
+            dmf2 = p[index] & 0x03
+            if dmf1 == 0b11:
+                index += 1
+            caption_lang = p[index+1:index+4].decode('UTF-8')
+            format_ = (p[index+4] & 0xF0) >> 4
+            tcs = (p[index+4] & 0x0C) >> 2
+            rollup_mode = p[index+4] & 0x03
+            index += 5
+    else:
+        tmd = (p[index] & 0xC0) >> 6
+        if tmd in (0b01, 0b10):
+            index += 5
+        index += 1
+    data_unit_loop_length = (p[index] << 16) | (p[index+1] << 8) | p[index+2]
+    start = index + 3
+    end = start + data_unit_loop_length
+    while start < end:
+        unit_separator = p[start]
+        data_unit_parameter = p[start+1]
+        data_unit_size = (p[start+2] << 16) | (p[start+3] << 8) | p[start+4]
+        start += 5
+        stop = start + data_unit_size
+        if data_unit_parameter == 0x20:
+            data_unit_data = p[start:stop]
+            yield {
+                'delta': delta,
+                'body': str(CProfileString(data_unit_data)),
+            }
+            start = stop
+        elif data_unit_parameter == 0x30:
+            number_of_code = p[start]
+            start += 1
+            codes = []
+            for _ in range(number_of_code):
+                character_code = (p[start] << 8) | p[start+1]
+                number_of_font = p[start+2]
+                start += 3
+                fonts = []
+                for __ in range(number_of_font):
+                    font_id = (p[start] & 0xF0) >> 4
+                    mode = p[start] & 0x0F
+                    depth = p[start+1]
+                    width = p[start+2]
+                    height = p[start+3]
+                    start += 4
+                    patterns = []
+                    for ___ in range(height):
+                        pattern_data = p[start:start+2]
+                        patterns.append(pattern_data)
+                        start += 2
+                    fonts.append({
+                        'font_id': font_id,
+                        'mode': mode,
+                        'depth': depth,
+                        'width': width,
+                        'height': height,
+                        'patterns': patterns,
+                    })
+                codes.append({
+                    'character_code': character_code,
+                    'number_of_font': number_of_font,
+                    'fonts': fonts,
+                })
+            yield {
+                'codes': codes,
+            }

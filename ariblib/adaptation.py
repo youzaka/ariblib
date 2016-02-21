@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+
 def adaptation_field_length(p):
     """パケットの adaptation_field_length を返す"""
 
@@ -22,13 +25,13 @@ def elementary_stream_priority_indicator(p):
     return (p[1] & 0x20) >> 5
 
 
-def PCR_flag(p):
+def pcr_flag(p):
     """パケットの PCR_flag を返す"""
 
     return (p[1] & 0x10) >> 4
 
 
-def OPCR_flag(p):
+def opcr_flag(p):
     """パケットの OPCR_flag を返す"""
 
     return (p[1] & 0x08) >> 3
@@ -54,3 +57,12 @@ def adaptation_field_extension_flag(p):
 
 def pcr(p):
     """パケットの pcr を返す"""
+
+    if pcr_flag(p):
+        base = ((p[2] << 25) | (p[3] << 17) | (p[4] << 9) | (p[5] << 1) |
+                ((p[6] & 0x80) >> 7))
+        extension = ((p[6] & 0x01) << 8) | p[7]
+        pcr = base * 300 + extension
+        pcr_hz = 27000000
+        second = pcr / pcr_hz
+        return timedelta(seconds=second)

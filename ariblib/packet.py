@@ -1,5 +1,7 @@
 import itertools
 
+from ariblib.adaptation import pcr_flag, pcr
+
 
 def packets(f, chunk_size=10000):
     """1パケットずつ返す"""
@@ -96,6 +98,16 @@ def payload(p):
     return bytearray(p[prev_start:start]), bytearray(p[start:])
 
 
+def stream(p):
+    """PES パケットの payload を返す"""
+
+    start = 4
+    if has_adaptation(p):
+        adaptation_length = p[start]
+        start += 1 + adaptation_length
+    return bytearray(p[start:])
+
+
 def payloads(ts):
     """payload を pid ごとに返す"""
 
@@ -111,3 +123,29 @@ def payloads(ts):
             pids[this_pid] = next_packet
         elif this_pid in pids:
             pids[this_pid].extend(next_packet)
+
+
+def streams(ts, target_pid):
+    """PES を返す"""
+
+    buf = bytearray()
+    for packet in ts:
+        if pid(packet) != target_pid:
+            continue
+        next_stream = stream(packet)
+        if payload_unit_start_indicator(packet):
+            if buf:
+                yield buf
+            buf = next_stream
+        else:
+            buf.extend(next_stream)
+
+
+def ptses(ts):
+    """PTS を順に返す"""
+
+    for packet in ts:
+        adaptation = adaptation_field(packet)
+        if not adaptation or not pcr_flag(adaptation):
+            continue
+        yield pcr(adaptation)
