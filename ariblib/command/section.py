@@ -19,6 +19,14 @@ def parse_pat(args):
         pprint(association, args.outfile)
 
 
+def parse_cat(args):
+    payloads = packet.payloads(packet.packets(args.infile))
+    cat = next(table.tables([0x1], [0x1], payloads))
+    accesses = sections.canditional_accesses(cat)
+    for access in accesses:
+        pprint(access, args.outfile)
+
+
 def parse_pmt(args):
     payloads = packet.payloads(packet.packets(args.infile))
     pat = next(table.tables([0x0], [0x0], payloads))
@@ -84,6 +92,9 @@ def add_parser(parsers):
     parser.add_argument(
         '--pat', action='store_const', dest='command', const=parse_pat,
         help='parse pat')
+    parser.add_argument(
+        '--cat', action='store_const', dest='command', const=parse_cat,
+        help='parse cat')
     parser.add_argument(
         '--pmt', action='store_const', dest='command', const=parse_pmt,
         help='parse pmt')

@@ -29,6 +29,25 @@ def program_associations(p):
         start += 4
 
 
+def canditional_accesses(p):
+    """CATのパースを行う"""
+
+    table_id = p[0]
+    section_length = ((p[1] & 0x0F) << 8) | p[2]
+    version_number = (p[5] & 0x3E) >> 1
+    section_number = p[6]
+    last_section_number = p[7]
+    base = {
+        'table_id': table_id,
+        'section_length': section_length,
+        'version_number': version_number,
+        'section_number': section_number,
+        'last_section_number': last_section_number,
+    }
+    base.update(descriptors(p[8:section_length-1]))
+    yield base
+
+
 def program_maps(p):
     """PMTのパースを行う"""
 
