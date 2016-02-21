@@ -68,6 +68,46 @@ def service_list_descriptor(p):
     return {'service_list': service_list}
 
 
+@tag(0x43)
+def satellite_delivery_system_dscriptor(p):
+    """衛星分配システム記述子(ARIB-STD-B10-2-6.2.6)"""
+
+    frequency = parse.bcd(p[0:4], 6)
+    orbital_position = parse.bcd(p[4:6], 1)
+    west_east_flag = (p[6] & 0x80) >> 7
+    polarisation = (p[6] & 0x60) >> 5
+    modulation = p[6] & 0x1F
+    # symbol_rate = o bcd(28, 5)
+    fec_inner = p[10] & 0x0F
+    return {
+        'frequency': frequency,
+        'orbital_position': orbital_position,
+        'west_east_flag': west_east_flag,
+        'polarisation': polarisation,
+        'modulation': modulation,
+        'fec_inner': fec_inner,
+    }
+
+
+@tag(0x48)
+def service_descriptor(p):
+    """サービス記述子(ARIB-STD-B10-2-6.2.13)"""
+
+    service_type = p[0]
+    service_provider_name_length = p[1]
+    index = 2 + service_provider_name_length
+    service_provider_name = str(AribString(p[2:index]))
+    index += 1
+    service_name_length = p[index]
+    end = index + service_provider_name_length
+    service_name = str(AribString(p[index:end]))
+    return {
+        'service_type': service_type,
+        'service_provider_name': service_provider_name,
+        'service_name': service_name,
+    }
+
+
 @tag(0x48)
 def service_descriptor(p):
     """サービス記述子(ARIB-STD-B10-2-6.2.13)"""
