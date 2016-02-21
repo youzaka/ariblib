@@ -1,4 +1,5 @@
 from ariblib.descriptors import descriptors
+from ariblib import parse
 
 
 def program_associations(p):
@@ -146,3 +147,52 @@ def service_descriptions(p):
 
         yield dict(base, **additional)
         start += 5 + descriptors_loop_length
+
+
+def event_informations(p):
+    """EITのパースを行う"""
+
+    table_id = p[0]
+    section_length = ((p[1] & 0x0F) << 8) | p[2]
+    service_id = (p[3] << 8) | p[4]
+    version_number = (p[5] & 0x3E) >> 1
+    section_number = p[6]
+    last_section_number = p[7]
+    transport_stream_id = (p[8] << 8) | p[9]
+    original_network_id = (p[10] << 8) | p[11]
+    segment_last_section_number = p[12]
+    last_table_id = p[13]
+
+    base = {
+        'table_id': table_id,
+        'section_length': section_length,
+        'service_id': service_id,
+        'version_number': version_number,
+        'section_number': section_number,
+        'last_section_number': last_section_number,
+        'transport_stream_id': transport_stream_id,
+        'original_network_id': original_network_id,
+        'segment_last_section_number': segment_last_section_number,
+        'last_table_id': last_table_id,
+    }
+    start = 14
+    end = section_length - 4
+    while start < end:
+        event_id = (p[start] << 8) | p[start+1]
+        start_time = parse.mjd(p[start+2:start+7])
+        duration = parse.bcdtime(p[start+7:start+10])
+        running_status = (p[start+10] & 0xE0) >> 5
+        free_ca_mode = (p[start+10] & 0x10) >> 4
+        descriptors_loop_length = ((p[start+10] & 0x0f) << 8) | p[start+11]
+        additional = {
+            'event_id': event_id,
+            'start_time': start_time,
+            'duration': duration,
+            'running_status': running_status,
+            'free_ca_mode': free_ca_mode,
+        }
+        additional.update(descriptors(
+            p[start+12:start+12+descriptors_loop_length]))
+
+        yield dict(base, **additional)
+        start += 12 + descriptors_loop_length

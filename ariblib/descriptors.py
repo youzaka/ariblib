@@ -6,14 +6,21 @@ _descriptors = {}
 
 
 def descriptors(p):
+    eeds = []
     while p:
         descriptor_tag = p[0]
         descriptor_length = p[1]
         start = 2
         end = start + descriptor_length
         descriptor = p[start:end]
-        yield from _descriptors.get(descriptor_tag)(descriptor).items()
+        if descriptor_tag == 0x4E:
+            eeds.append(_descriptors.get(descriptor_tag)(descriptor))
+        else:
+            yield from _descriptors.get(descriptor_tag)(descriptor).items()
         p = p[end:]
+
+    if eeds:
+        yield ('detail', list(extended_events(eeds)))
 
 
 def tag(tag_id):
@@ -105,6 +112,104 @@ def linkage_descriptor(p):
     return base
 
 
+@tag(0x4D)
+def short_event_descriptor(p):
+    """短形式イベント記述子(ARIB-STD-B10-2-6.2.15)"""
+
+    iso_639_language_code = p[0:3].decode('UTF-8')
+    event_name_length = p[3]
+    index = 4 + event_name_length
+    event_name_char = str(AribString(p[4:index]))
+    text_length = p[index]
+    index += 1
+    end = index + text_length
+    text_char = str(AribString(p[index:end]))
+    return {
+        'text_lang': iso_639_language_code,
+        'event_name_char': event_name_char,
+        'text_char': text_char,
+    }
+
+
+@tag(0x4E)
+def extended_event_descriptor(p):
+    """拡張形式イベント記述子(ARIB-STD-B10-2-6.2.7)"""
+
+    descriptor_number = (p[0] & 0xF0) >> 4
+    last_descriptor_number = p[0] & 0x0F
+    iso_639_language_code = p[1:4].decode('UTF-8')
+    length_of_items = p[4]
+    items = []
+
+    start = 5
+    end = 5 + length_of_items
+    while start < end:
+        item_description_length = p[start]
+        start += 1
+        stop = start + item_description_length
+        item_description_char = str(AribString(p[start:stop]))
+        start = stop
+        item_length = p[start]
+        start += 1
+        stop = start + item_length
+        item_char = p[start:stop]
+        start = stop
+        items.append({
+            'item_description_char': item_description_char,
+            'item_char': item_char,
+        })
+
+    text_length = p[start]
+    start += 1
+    stop = start + text_length
+    text_char = str(AribString(p[start:stop]))
+    return {
+        'descriptor_number': descriptor_number,
+        'last_descriptor_number': last_descriptor_number,
+        'description_lang': iso_639_language_code,
+        'items': items,
+        'text_char': text_char,
+    }
+
+
+def extended_events(eeds):
+    sections = []
+    for eed in eeds:
+        for item in eed['items']:
+            title = item['item_description_char']
+            body = item['item_char']
+            lang = eed['description_lang']
+            if not sections or title != '' or title == sections[-1]['title']:
+                sections.append({
+                    'title': title,
+                    'body': bytearray(body),
+                    'description_lang': lang,
+                })
+            else:
+                sections[-1]['body'].extend(bytearray(body))
+    for section in sections:
+        section['body'] = str(AribString(section['body']))
+        yield section
+
+
+@tag(0x50)
+def component_descriptor(p):
+    """コンポーネント記述子(ARIB-STD-B10-2-6.2.3)"""
+
+    stream_content = p[0] & 0x0F
+    component_type = p[1]
+    component_tag = p[2]
+    iso_639_language_code = p[3:6].decode('UTF-8')
+    component_text = str(AribString(p[6:]))
+    return {
+        'stream_content': stream_content,
+        'component_type': component_type,
+        'component_tag': component_tag,
+        'component_lang': iso_639_language_code,
+        'component_text': component_text,
+    }
+
+
 @tag(0x52)
 def stream_identifier_descriptor(p):
     """ストリーム識別記述子 (ARIB-STD-B10-2-6.2.16)"""
@@ -112,6 +217,43 @@ def stream_identifier_descriptor(p):
     return {
         'component_tag': p[0],
     }
+
+
+@tag(0x54)
+def content_descriptor(p):
+    """コンテント記述子(ARIB-STD-B10-2-6.2.4)"""
+
+    nibbles = []
+    while p:
+        content_nibble_level_1 = (p[0] & 0xF0) >> 4
+        content_nibble_level_2 = p[0] & 0x0F
+        user_nibble_level_1 = (p[1] & 0xF0) >> 4
+        user_nibble_level_2 = p[1] & 0x0F
+        nibbles.append((
+            content_nibble_level_1,
+            content_nibble_level_2,
+            user_nibble_level_1,
+            user_nibble_level_2))
+        p = p[2:]
+    return {
+        'nibbles': nibbles,
+    }
+
+
+@tag(0x55)
+def parental_rating_descriptor(p):
+    """パレンタルレート記述子(ARIB-STD-B10-2-6.2.12)"""
+
+    ratings = []
+    while p:
+        country_code = p[0:3].decode('UTF-8')
+        rating = p[3]
+        ratings.append({
+            'country_code': country_code,
+            'rating': rating,
+        })
+        p = p[4:]
+    return {'ratings': ratings}
 
 
 @tag(0xC1)
@@ -127,6 +269,111 @@ def digital_copy_control_descriptor(p):
         'digital_recording_control_data': digital_recording_control_data,
         'aps_control_data': aps_control_data,
     }
+
+
+@tag(0xC4)
+def audio_component_descriptor(p):
+    """音声コンポーネント記述子(ARIB-STD-B10-2-6.2.26)"""
+
+    stream_content = p[0] & 0x0F
+    component_type = p[1]
+    component_tag = p[2]
+    stream_type = p[3]
+    simulcast_group_tag = p[4]
+    es_multi_lingual_flag = (p[5] & 0x80) >> 7
+    main_component_flag = (p[5] & 0x40) >> 6
+    quality_indicator = (p[5] & 0x30) >> 4
+    sampling_rate = (p[5] & 0x0E) >> 1
+    iso_639_language_code = p[6:9].decode('UTF-8')
+    index = 9
+
+    if es_multi_lingual_flag:
+        iso_639_language_code_2 = p[9:12].decode('UTF-8')
+        index += 3
+        audio_text = str(AribString(p[index:]))
+        return {
+            'stream_content': stream_content,
+            'component_type': component_type,
+            'component_tag': component_tag,
+            'stream_type': stream_type,
+            'simulcast_group_tag': simulcast_group_tag,
+            'es_multi_lingual_flag': es_multi_lingual_flag,
+            'main_component_flag': main_component_flag,
+            'quality_indicator': quality_indicator,
+            'sampling_rate': sampling_rate,
+            'audio_lang': iso_639_language_code,
+            'audio_lang_2': iso_639_language_code_2,
+            'audio_text': audio_text,
+        }
+
+    audio_text = str(AribString(p[index:]))
+    return {
+        'stream_content': stream_content,
+        'component_type': component_type,
+        'component_tag': component_tag,
+        'stream_type': stream_type,
+        'simulcast_group_tag': simulcast_group_tag,
+        'es_multi_lingual_flag': es_multi_lingual_flag,
+        'main_component_flag': main_component_flag,
+        'quality_indicator': quality_indicator,
+        'sampling_rate': sampling_rate,
+        'audio_lang': iso_639_language_code,
+        'audio_text': audio_text,
+    }
+
+
+@tag(0xC7)
+def data_content_descriptor(p):
+    """データコンテンツ記述子(ARIB-STD-B10-2-6.2.28)
+
+    data_component_idが0x0008のものは、selector_byteに
+    字幕・文字スーパーの識別情報が入っている(ARIB-STD-B24-1-3-9.6.2)
+
+    """
+
+    data_component_id = (p[0] << 8) | p[1]
+    entry_component = p[2]
+    selector_length = p[3]
+    base = {
+        'data_component_id': data_component_id,
+        'entry_component': entry_component,
+    }
+
+    # ARIB-STD-B24-1-3-9.6.2
+    if data_component_id == 0x08:
+        languages = []
+        num_languages = p[4]
+        index = 5
+        for _ in range(num_languages):
+            language_tag = (p[index] & 0xE0) >> 5
+            dmf = p[index] & 0x0F
+            iso_639_language_code = p[index+1:index+4].decode('UTF-8')
+            languages.append({
+                'language_tag': language_tag,
+                'dmf': dmf,
+                'caption_lang': iso_639_language_code,
+            })
+        base.update({'languages': languages})
+    index = 4 + selector_length
+    num_of_component_ref = p[index]
+    component_refs = []
+    index += 1
+    for _ in range(num_of_component_ref):
+        component_ref = p[index]
+        component_refs.append(component_ref)
+        index += 1
+
+    iso_639_language_code = p[index:index+3].decode('UTF-8')
+    text_length = p[index+3]
+    index += 4
+    end = index + text_length
+    data_text = str(AribString(p[index:end]))
+    base.update({
+        'component_refs': component_refs,
+        'data_lang': iso_639_language_code,
+        'data_text': data_text,
+    })
+    return base
 
 
 @tag(0xC8)
@@ -214,6 +461,79 @@ def logo_transmission_descriptor(p):
             'logo_transmission_type': logo_transmission_type,
             'logo_char': logo_char,
         }
+
+
+@tag(0xD6)
+def event_group_descriptor(p):
+    """イベントグループ記述子 (ARIB-STD-B10-2-6.2.34)"""
+
+    group_type = (p[0] & 0xF0) >> 4
+    event_count = p[0] & 0x0F
+    events = []
+
+    index = 1
+    for _ in range(event_count):
+        service_id = (p[index] << 8) | p[index+1]
+        event_id = (p[index+2] << 8) | p[index+3]
+        events.append({
+            'service_id': service_id,
+            'event_id': event_id,
+        })
+        index += 4
+
+    if group_type in (4, 5):
+        networks = []
+        for _ in range(event_count):
+            original_network_id = (p[index] << 8) | p[index+1]
+            transport_stream_id = (p[index+2] << 8) | p[index+3]
+            service_id = (p[index+4] << 8) | p[index+5]
+            event_id = (p[index+6] << 8) | p[index+7]
+            networks.append({
+                'original_network_id': original_network_id,
+                'transport_stream_id': transport_stream_id,
+                'service_id': service_id,
+                'event_id': event_id,
+            })
+            index += 8
+        return {
+            'group_type': group_type,
+            'event_count': event_count,
+            'events': events,
+            'networks': networks,
+        }
+    return {
+        'group_type': group_type,
+        'event_count': event_count,
+        'events': events,
+    }
+
+
+@tag(0xDC)
+def ldt_linkage_descriptor(p):
+    """LDTリンク記述子(ARIB-STD-B10-2.6.2.40)"""
+
+    original_service_id = (p[0] << 8) | p[1]
+    transport_stream_id = (p[2] << 8) | p[3]
+    original_network_id = (p[4] << 8) | p[5]
+    descriptors = []
+
+    p = p[6:]
+    while p:
+        description_id = (p[0] << 8) | p[1]
+        description_type = p[2] & 0x0F
+        user_defined = p[3]
+        descriptors.append({
+            'description_id': description_id,
+            'description_type': description_type,
+            'user_defined': user_defined,
+        })
+        p = p[4:]
+    return {
+        'ldt_original_service_id': original_service_id,
+        'ldt_transport_stream_id': transport_stream_id,
+        'ldt_original_network_id': original_network_id,
+        'ldt_descriptors': descriptors,
+    }
 
 
 @tag(0xF6)

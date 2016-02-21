@@ -3,7 +3,8 @@
 """
 
 from argparse import FileType
-import json
+from itertools import chain
+from pprint import pprint
 import sys
 
 from ariblib import packet, sections, table
@@ -12,8 +13,9 @@ from ariblib import packet, sections, table
 def parse_pat(args):
     payloads = packet.payloads(packet.packets(args.infile))
     pat = next(table.tables([0x0], [0x0], payloads))
-    associations = list(sections.program_associations(pat))
-    json.dump(associations, args.outfile, indent=4)
+    associations = sections.program_associations(pat)
+    for association in associations:
+        pprint(association, args.outfile)
 
 
 def parse_pmt(args):
@@ -24,22 +26,33 @@ def parse_pmt(args):
                 in sections.program_associations(pat)
                 if association['program_number'] != 0]
     pmt = next(table.tables(pmt_pids, [0x2], payloads))
-    program_maps = list(sections.program_maps(pmt))
-    json.dump(program_maps, args.outfile, indent=4)
+    program_maps = sections.program_maps(pmt)
+    for program_map in program_maps:
+        pprint(program_map, args.outfile)
 
 
 def parse_nit(args):
     payloads = packet.payloads(packet.packets(args.infile))
     nit = next(table.tables([0x10], [0x40, 0x41], payloads))
-    networks = list(sections.network_informations(nit))
-    json.dump(networks, args.outfile, indent=4)
+    networks = sections.network_informations(nit)
+    for network in networks:
+        pprint(network, args.outfile)
 
 
 def parse_sdt(args):
     payloads = packet.payloads(packet.packets(args.infile))
-    sdt = next(table.tables([0x11], [0x42, 0x46], payloads))
-    services = list(sections.service_descriptions(sdt))
-    json.dump(services, args.outfile, indent=4)
+    sdt = table.tables([0x11], [0x42, 0x46], payloads)
+    services = chain.from_iterable(map(sections.service_descriptions, sdt))
+    for service in services:
+        pprint(service, args.outfile)
+
+
+def parse_eit(args):
+    payloads = packet.payloads(packet.packets(args.infile))
+    eit = table.tables([0x12, 0x26, 0x27], list(range(0x4E, 0x70)), payloads)
+    events = chain.from_iterable(map(sections.event_informations, eit))
+    for event in events:
+        pprint(event, args.outfile)
 
 
 def add_parser(parsers):
@@ -56,6 +69,9 @@ def add_parser(parsers):
     parser.add_argument(
         '--sdt', action='store_const', dest='command', const=parse_sdt,
         help='parse sdt')
+    parser.add_argument(
+        '--eit', action='store_const', dest='command', const=parse_eit,
+        help='parse eit')
     parser.add_argument(
         'infile', nargs='?', type=FileType('rb'), default=sys.stdin)
     parser.add_argument(
