@@ -3,7 +3,8 @@
 """
 
 from argparse import FileType
-from itertools import chain
+from itertools import chain, filterfalse
+from operator import itemgetter
 from pprint import pprint
 import sys
 
@@ -55,6 +56,22 @@ def parse_eit(args):
         pprint(event, args.outfile)
 
 
+def parse_present_event(args):
+    payloads = packet.payloads(packet.packets(args.infile))
+    eit = table.tables([0x12], [0x4E], payloads)
+    events = chain.from_iterable(map(sections.event_informations, eit))
+    present = next(filterfalse(itemgetter('section_number'), events))
+    pprint(present, args.outfile)
+
+
+def parse_next_event(args):
+    payloads = packet.payloads(packet.packets(args.infile))
+    eit = table.tables([0x12], [0x4E], payloads)
+    events = chain.from_iterable(map(sections.event_informations, eit))
+    present = next(filter(itemgetter('section_number'), events))
+    pprint(present, args.outfile)
+
+
 def add_parser(parsers):
     parser = parsers.add_parser('section')
     parser.add_argument(
@@ -72,6 +89,14 @@ def add_parser(parsers):
     parser.add_argument(
         '--eit', action='store_const', dest='command', const=parse_eit,
         help='parse eit')
+    parser.add_argument(
+        '--present', action='store_const', dest='command',
+        const=parse_present_event,
+        help='parse present event')
+    parser.add_argument(
+        '--next', action='store_const', dest='command',
+        const=parse_next_event,
+        help='parse next event')
     parser.add_argument(
         'infile', nargs='?', type=FileType('rb'), default=sys.stdin)
     parser.add_argument(
