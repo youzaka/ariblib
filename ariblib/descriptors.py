@@ -473,6 +473,66 @@ def ts_information_descriptor(p):
     }
 
 
+@tag(0xCE)
+def extended_broadcaster_descriptor(p):
+    """拡張ブロードキャスタ記述子(ARIB-STD-B10-2-6.2.43)"""
+
+    broadcaster_type = (p[0] & 0xF0) >> 4
+
+    if broadcaster_type == 0x1:
+        terrestrial_broadcaster_id = (p[1] << 8) | p[2]
+        number_of_affiliation_id_loop = (p[3] & 0xF0) >> 4
+        number_of_broadcaster_id_loop = p[3] & 0x0F
+        affiliations = []
+        broadcasters = []
+        index = 4
+        for _ in range(number_of_affiliation_id_loop):
+            affiliation_id = p[index]
+            affiliations.append(affiliation_id)
+            index += 1
+        for _ in range(number_of_broadcaster_id_loop):
+            original_network_id = p[index]
+            broadcaster_id = p[index+1]
+            broadcasters.append({
+                'original_network_id': original_network_id,
+                'broadcaster_id': broadcaster_id,
+            })
+            index += 2
+        return {
+            'broadcaster_type': broadcaster_type,
+            'terrestrial_broadcaster_id': terrestrial_broadcaster_id,
+            'affiliations': affiliations,
+            'broadcasters': broadcasters,
+        }
+    if broadcaster_type == 0x2:
+        terrestrial_sound_broadcaster_id = (p[1] << 8) | p[2]
+        number_of_sound_broadcast_affiliation_id_loop = (p[3] & 0xF0) >> 4
+        number_of_broadcaster_id_loop = p[3] & 0x0F
+        sound_broadcast_affiliations = []
+        broadcasters = []
+        index = 4
+        for _ in range(number_of_sound_broadcast_affiliation_id_loop):
+            sound_broadcast_affiliations_id = p[index]
+            sound_broadcast_affiliations.append(
+                sound_broadcast_affiliations_id)
+            index += 1
+        for _ in range(number_of_broadcaster_id_loop):
+            original_network_id = p[index]
+            broadcaster_id = p[index+1]
+            broadcasters.append({
+                'original_network_id': original_network_id,
+                'broadcaster_id': broadcaster_id,
+            })
+            index += 2
+        return {
+            'broadcaster_type': broadcaster_type,
+            'terrestrial_sound_broadcaster_id':
+                terrestrial_sound_broadcaster_id,
+            'sound_broadcast_affiliations': sound_broadcast_affiliations,
+            'broadcasters': broadcasters,
+        }
+
+
 @tag(0xCF)
 def logo_transmission_descriptor(p):
     """ロゴ伝送記述子(ARIB-STD-B10-2-6.2.44)"""
@@ -545,6 +605,92 @@ def event_group_descriptor(p):
         'group_type': group_type,
         'event_count': event_count,
         'events': events,
+    }
+
+
+@tag(0xD7)
+def si_parameter_descriptor(p):
+    """SI伝送パラメータ記述子(ARIB-STD-B10-2-6.2.35)"""
+
+    parameter_version = p[0]
+    update_time = parse.mjd(p[1:3])
+    parameters = []
+
+    p = p[3:]
+    while p:
+        table_id = p[0]
+        table_description_length = p[1]
+
+        # ARIB-TR-B14-31.1.2.1, ARIB-TR-B15-31.2.2.1
+        if (table_id in (0x40, 0x42, 0x46, 0x4E, 0x4F, 0xC4) and
+                table_description_length == 1):
+            table_cycle = parse.bcd(p[2:3])
+            parameters.append({
+                'table_id': table_id,
+                'table_cycle': table_cycle,
+            })
+            p = p[3:]
+        elif table_id in (0xC3, 0xC8):
+            table_cycle = parse.bcd(p[2:4])
+            parameters.append({
+                'table_id': table_id,
+                'table_cycle': table_cycle,
+            })
+            p = p[4:]
+        elif table_id == 0x4E and table_description_length == 4:
+            table_cycle_H_EIT_PF = parse.bcd(p[2:3])
+            table_cycle_M_EIT = parse.bcd(p[3:4])
+            table_cycle_L_EIT = parse.bcd(p[4:5])
+            num_of_M_EIT_event = (p[5] & 0xF0) >> 4
+            num_of_L_EIT_event = p[5] & 0x0F
+            parameters.append({
+                'table_id': table_id,
+                'parameter_version': parameter_version,
+                'update_time': update_time,
+                'table_cycle_H_EIT_PF': table_cycle_H_EIT_PF,
+                'table_cycle_M_EIT': table_cycle_M_EIT,
+                'table_cycle_L_EIT': table_cycle_L_EIT,
+                'num_of_M_EIT_event': num_of_M_EIT_event,
+                'num_of_L_EIT_event': num_of_L_EIT_event,
+            })
+            p = p[6:]
+        elif table_id in (0x50, 0x58, 0x60):
+            cycles = []
+            start = 2
+            end = start + table_description_length
+            while start < end:
+                media_type = (p[start] & 0xC0) >> 6
+                pattern = (p[start] & 0x30) >> 4
+                schdule_range = parse.bcd(p[start+1:start+2])
+                # base_cycle = bcd(12)
+                cycle_group_count = p[start+4] & 0x0F
+                groups = []
+                start = 5
+                for _ in range(cycle_group_count):
+                    num_of_segment = parse.bcd(p[start:start+1])
+                    cycle = parse.bcd(p[start+1:start+2])
+                    groups.append({
+                        'num_of_segment': num_of_segment,
+                        'cycle': cycle,
+                    })
+                    start += 2
+                cycles.append({
+                    'media_type': media_type,
+                    'pattern': pattern,
+                    'schdule_range': schdule_range,
+                    'groups': groups,
+                })
+            parameters.append({
+                'table_id': table_id,
+                'parameter_version': parameter_version,
+                'update_time': update_time,
+                'cycles': cycles,
+            })
+            p = p[end:]
+    return {
+        'parameter_version': parameter_version,
+        'update_time': update_time,
+        'parameters': parameters,
     }
 
 

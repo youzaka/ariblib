@@ -48,6 +48,14 @@ def parse_nit(args):
         pprint(network, args.outfile)
 
 
+def parse_bit(args):
+    payloads = packet.payloads(packet.packets(args.infile))
+    bit = next(table.tables([0x24], [0xC4], payloads))
+    broadcasters = sections.broadcaster_informations(bit)
+    for broadcaster in broadcasters:
+        pprint(broadcaster, args.outfile)
+
+
 def parse_sdt(args):
     payloads = packet.payloads(packet.packets(args.infile))
     sdt = table.tables([0x11], [0x42, 0x46], payloads)
@@ -101,6 +109,9 @@ def add_parser(parsers):
     parser.add_argument(
         '--nit', action='store_const', dest='command', const=parse_nit,
         help='parse nit')
+    parser.add_argument(
+        '--bit', action='store_const', dest='command', const=parse_bit,
+        help='parse bit')
     parser.add_argument(
         '--sdt', action='store_const', dest='command', const=parse_sdt,
         help='parse sdt')

@@ -124,6 +124,42 @@ def network_informations(p):
         start += 6 + transport_descriptors_length
 
 
+def broadcaster_informations(p):
+    """BITのパースを行う"""
+
+    table_id = p[0]
+    section_length = ((p[1] & 0x0F) << 8) | p[2]
+    original_network_id = (p[3] << 8) | p[4]
+    version_number = (p[5] & 0x3E) >> 1
+    section_number = p[6]
+    last_section_number = p[7]
+    broadcast_view_priority = (p[8] & 0x10) >> 4
+    first_descriptors_length = ((p[8] & 0x0F) << 8) | p[9]
+    start = 10 + first_descriptors_length
+    end = section_length - 4
+
+    base = {
+        'table_id': table_id,
+        'original_network_id': original_network_id,
+        'version_number': version_number,
+        'section_number': section_number,
+        'last_section_number': last_section_number,
+    }
+    base.update(descriptors(p[10:start]))
+
+    while start < end:
+        broadcaster_id = p[start]
+        broadcaster_descriptor_length = ((p[start+1] & 0x0F) << 8) | p[start+2]
+        additional = {
+            'broadcaster_id': broadcaster_id,
+        }
+        start += 3
+        stop = start + broadcaster_descriptor_length
+        additional.update(descriptors(p[start:stop]))
+        yield dict(base, **additional)
+        start = stop
+
+
 def service_descriptions(p):
     """SDTのパースを行う"""
 
