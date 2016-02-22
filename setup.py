@@ -3,7 +3,7 @@ from ariblib import __version__
 
 
 setup(
-    name='ariblib',
+    name='ariblib2',
     version=__version__,
     author='Chisa Youzaka',
     author_email='ariblib@txqz.net',
