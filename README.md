@@ -21,3 +21,11 @@ $ python -m ariblib section --caption SRC DST
 $ python -m ariblib section --present SRC DST
 ```
 とすると、 SRC にある ts ファイルを読みこみ、現在放送中の番組情報を DST に出力します。
+
+
+### tsから必要なストリームのみを取り出す(ワンセグなどの削除)
+```
+$ python -m ariblib split SRC DST
+```
+とすると、 SRC にある ts ファイルが指定する PAT 情報を読み込み、最初のストリームの動画・音声のみを保存した TS ファイルを DST に保存します。 TSSplitter のようなことができます。
+
