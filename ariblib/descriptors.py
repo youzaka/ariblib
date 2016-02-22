@@ -722,6 +722,24 @@ def ldt_linkage_descriptor(p):
     }
 
 
+@tag(0xDE)
+def content_availability_descriptor(p):
+    """コンテント利用記述子 (ARIB-STD-B10-2-6.2.45)"""
+
+    copy_restriction_mode = (p[0] & 0x40) >> 6
+    image_constraint_token = (p[0] & 0x20) >> 5
+    retention_mode = (p[0] & 0x10) >> 4
+    retention_state = (p[0] & 0x0E) >> 1
+    encryption_mode = p[0] & 0x01
+    return {
+        'copy_restriction_mode': copy_restriction_mode,
+        'image_constraint_token': image_constraint_token,
+        'retention_mode': retention_mode,
+        'retention_state': retention_state,
+        'encryption_mode': encryption_mode,
+    }
+
+
 @tag(0xF6)
 def access_control_descriptor(p):
     """アクセス制御記述子 (ARIB-TR-B14 第四篇改定案 30.2.2.2)"""
