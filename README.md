@@ -64,7 +64,7 @@ from ariblib.descriptors import ShortEventDescriptor
 from ariblib.sections import EventInformationSection
 
 def show_program(eit):
-    event = eit.events.__next__()
+    event = iter(eit.events).__next__()
     program_title = event.descriptors[ShortEventDescriptor][0].event_name_char
     start = event.start_time
     return "{} {}".format(program_title, start)
@@ -87,7 +87,7 @@ with tsopen(sys.argv[1]) as ts:
 import sys
 
 from ariblib import tsopen
-from ariblib.constant import SERVICE_TYPES
+from ariblib.constants import SERVICE_TYPE
 from ariblib.descriptors import ServiceDescriptor
 from ariblib.sections import ServiceDescriptionSection
 
@@ -105,7 +105,7 @@ with tsopen(sys.argv[1]) as ts:
 import sys
 
 from ariblib import tsopen
-from ariblib.constants import VIDEO_ENCODE_FORMATS
+from ariblib.constants import VIDEO_ENCODE_FORMAT
 from ariblib.descriptors import VideoDecodeControlDescriptor
 from ariblib.sections import ProgramAssociationSection, ProgramMapSection
 
