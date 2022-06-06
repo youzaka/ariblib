@@ -48,7 +48,7 @@ class TransportStreamFile(BufferedReader):
             ):
                 next = packet[start:stop]
                 if not next:
-                    raise StopIteration
+                    return
                 yield next
 
     def __next__(self):
